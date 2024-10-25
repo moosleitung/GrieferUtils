@@ -260,8 +260,34 @@ public class ConfigPatcher {
 						newContainsNot[idx++] = s;
 				}
 
-				if (foundDelimiter)
-					filter.setWordsContainsNot(newContainsNot);
+				if (foundDelimiter) {
+					String[] newContainsNotCopy = new String[idx];
+					System.arraycopy(newContainsNot, 0, newContainsNotCopy, 0, idx);
+					filter.setWordsContainsNot(newContainsNotCopy);
+				}
+			}
+
+			// Save filters
+			LabyMod.getInstance().getChatToolManager().saveTools();
+		}
+
+		if (cmp.compare("2.3-BETA-8", version) < 0 && LABY_3.isActive()) {
+
+			// Patch filters
+			for (Filters.Filter filter : LabyMod.getInstance().getChatToolManager().getFilters()) {
+				String[] containsNot = filter.getWordsContainsNot();
+				if (containsNot.length == 0)
+					continue;
+
+				String[] newContainsNot = new String[containsNot.length];
+				int idx = 0;
+				for (String s : filter.getWordsContainsNot())
+					if (s != null)
+						newContainsNot[idx++] = s;
+
+				String[] newContainsNotCopy = new String[idx];
+				System.arraycopy(newContainsNot, 0, newContainsNotCopy, 0, idx);
+				filter.setWordsContainsNot(newContainsNotCopy);
 			}
 
 			// Save filters
