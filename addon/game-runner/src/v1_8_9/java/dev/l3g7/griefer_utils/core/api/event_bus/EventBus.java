@@ -28,21 +28,11 @@ class EventBus {
 	static final Map<Class<?>, Listener.ListenerList> events = Collections.synchronizedMap(new ConcurrentHashMap<>());
 
 	/**
-	 * The profiler, if one exists.
-	 */
-	static EventProfiler profiler = null;
-
-	/**
 	 * Triggers all listeners annotated with an event handler targeting the given event.
 	 */
 	static void fire(Event event) {
 		EventRegisterer.handleLazyRegistrations(event.getClass().getName());
 
-		if (profiler != null) {
-			fireProfiled(profiler, event);
-			return;
-		}
-
 		Listener.ListenerList list = events.get(event.getClass());
 		if (list == null)
 			return;
@@ -54,32 +44,6 @@ class EventBus {
 				BugReporter.reportError(t);
 			}
 		}
-	}
-
-	/**
-	 * Triggers all listeners annotated with an event handler targeting the given event, and measures the time it took.
-	 */
-	static void fireProfiled(EventProfiler profiler, Event event) {
-		Listener.ListenerList list = events.get(event.getClass());
-		if (list == null)
-			return;
-
-		boolean profilingListeners = profiler.profileListeners(event);
-		long start = System.currentTimeMillis();
-
-		for (Listener listener : list) {
-			try {
-				long listenerStart = System.currentTimeMillis();
-				listener.consumer.accept(event);
-
-				if (profilingListeners)
-					profiler.onListenerProfile(listener.owner, System.currentTimeMillis() - listenerStart);
-			} catch (Throwable t) {
-				BugReporter.reportError(t);
-			}
-		}
-
-		profiler.onEventProfile(event, profilingListeners, System.currentTimeMillis() - start);
 	}
 
 	/**
