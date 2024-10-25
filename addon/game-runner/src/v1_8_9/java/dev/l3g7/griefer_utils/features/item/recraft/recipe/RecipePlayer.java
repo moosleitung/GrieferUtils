@@ -18,6 +18,7 @@ import dev.l3g7.griefer_utils.core.misc.TickScheduler;
 import dev.l3g7.griefer_utils.features.item.recraft.Recraft;
 import dev.l3g7.griefer_utils.features.item.recraft.RecraftAction;
 import dev.l3g7.griefer_utils.features.item.recraft.RecraftRecording;
+import dev.l3g7.griefer_utils.features.uncategorized.debug.RecraftLogger;
 import net.minecraft.network.play.client.C0DPacketCloseWindow;
 import net.minecraft.network.play.server.S2DPacketOpenWindow;
 
@@ -61,6 +62,8 @@ public class RecipePlayer {
 		for (RecraftAction action : recording.actions())
 			pendingActions.add((RecipeAction) action);
 
+		RecraftLogger.log("Started recipe as" + (Recraft.playingSuccessor ? "successor" : "origin"));
+
 		if (Recraft.playingSuccessor)
 			send("/rezepte");
 		else
@@ -78,6 +81,7 @@ public class RecipePlayer {
 
 		actionBeingExecuted = null;
 		if (closeGui) {
+			RecraftLogger.log("Closing window");
 			event.cancel();
 			closeGui = false;
 			TickScheduler.runAfterClientTicks(() -> {
@@ -91,6 +95,8 @@ public class RecipePlayer {
 
 		if (pendingActions == null)
 			return;
+
+		RecraftLogger.log("Recevied OpenWindow: " + pendingActions.size());
 
 		if (pendingActions.isEmpty()) {
 			closeGui = true;
@@ -109,7 +115,9 @@ public class RecipePlayer {
 
 	private static void executeAction(RecipeAction action, int windowId, boolean hasSucceeded) {
 		actionBeingExecuted = action;
-		if (handleErrors(action.execute(windowId, hasSucceeded), windowId, hasSucceeded))
+		ActionResult result = action.execute(windowId, hasSucceeded);
+		RecraftLogger.log("Executing action " + action + " has returned " + result);
+		if (repeatAction(result, windowId, hasSucceeded))
 			return;
 
 		TickScheduler.runAfterClientTicks(() -> {
@@ -120,37 +128,37 @@ public class RecipePlayer {
 		}, 2);
 	}
 
-	private static boolean handleErrors(Boolean result, int windowId, boolean hasSucceeded) {
-		// Success
-		if (result == Boolean.TRUE)
+	private static boolean repeatAction(ActionResult result, int windowId, boolean hasSucceeded) {
+		if (result == ActionResult.SUCCESS)
 			return false;
 
-		// Action failed
-		if (result == Boolean.FALSE) {
+		if (result == ActionResult.FAIL) {
 			TickScheduler.runAfterClientTicks(player()::closeScreen, 1);
 			pendingActions = null;
 		}
 
-		// Action was skipped
 		if (pendingActions == null || hasSucceeded)
 			return true;
 
-		if (pendingActions.isEmpty()) {
-			pendingActions = null;
-			TickScheduler.runAfterClientTicks(() -> {
-				player().closeScreen();
-				onFinish.get();
-			}, 1);
-		} else {
+		if (!pendingActions.isEmpty()) {
 			executeAction(pendingActions.poll(), windowId, false);
+			return true;
 		}
 
+		pendingActions = null;
+		TickScheduler.runAfterClientTicks(() -> {
+			player().closeScreen();
+			onFinish.get();
+		}, 1);
 		return true;
 	}
 
 	@EventListener
 	private static void onCloseWindow(PacketSendEvent<C0DPacketCloseWindow> event) {
-		pendingActions = null;
+		if (pendingActions != null) {
+			RecraftLogger.log("Received close Window");
+			pendingActions = null;
+		}
 	}
 
 	@EventListener

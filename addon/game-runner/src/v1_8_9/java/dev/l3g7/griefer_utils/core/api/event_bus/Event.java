@@ -17,6 +17,20 @@ import static dev.l3g7.griefer_utils.core.api.reflection.Reflection.c;
 public class Event {
 
 	/**
+	 * Whether events will be fired.
+	 * Used for debugging purposes.
+	 */
+	public static boolean fireEvents = true;
+
+	/**
+	 * Sets the used event profiler.
+	 * May be null to disable profiling.
+	 */
+	public static void setEventProfiler(EventProfiler profiler) {
+		EventBus.profiler = profiler;
+	}
+
+	/**
 	 * Whether the event is canceled.
 	 * The consequences of canceling an event are implementation specific.
 	 */
@@ -35,7 +49,8 @@ public class Event {
 	 * @return itself.
 	 */
 	public Event fire() {
-		EventBus.fire(this);
+		if (fireEvents)
+			EventBus.fire(this);
 		return this;
 	}
 
@@ -43,7 +58,8 @@ public class Event {
 	 * Triggers all listeners associated with this event.
 	 */
 	public static void fire(Class<? extends Annotation> event) {
-		AnnotationEventHandler.triggerEvent(event);
+		if (fireEvents)
+			AnnotationEventHandler.triggerEvent(event);
 	}
 
 	/**

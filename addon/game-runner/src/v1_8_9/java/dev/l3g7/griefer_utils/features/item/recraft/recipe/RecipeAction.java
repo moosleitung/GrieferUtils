@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static dev.l3g7.griefer_utils.core.api.bridges.LabyBridge.labyBridge;
 import static dev.l3g7.griefer_utils.core.util.MinecraftUtil.mc;
 import static dev.l3g7.griefer_utils.core.util.MinecraftUtil.player;
+import static dev.l3g7.griefer_utils.features.item.recraft.recipe.ActionResult.*;
 
 public class RecipeAction extends RecraftAction {
 
@@ -43,25 +44,19 @@ public class RecipeAction extends RecraftAction {
 		this.craftingIngredients = null;
 	}
 
-	/**
-	 * @return
-	 * true: if this action was successful<br>
-	 * false: if this action failed<br>
-	 * null: if this action was skipped
-	 */
-	public Boolean execute(int windowId, boolean hasSucceeded) {
+	public ActionResult execute(int windowId, boolean hasSucceeded) {
 		if (ingredient != null) {
 			int ingredientSlot = ingredient.getSlot();
 			if (ingredientSlot == -1) {
 				if (hasSucceeded)
-					return null;
+					return SKIPPED;
 
 				labyBridge.notify("§c§lFehler \u26A0", "Ein benötigtes Item ist nicht verfügbar!");
-				return false;
+				return FAIL;
 			}
 
 			click(windowId, ingredientSlot);
-			return true;
+			return SUCCESS;
 		}
 
 		if (craftingIngredients != null) {
@@ -70,13 +65,13 @@ public class RecipeAction extends RecraftAction {
 					if (!hasSucceeded)
 						labyBridge.notify("§eAktion übersprungen \u26A0", "Du hattest nicht genügend Zutaten im Inventar!");
 
-					return null;
+					return SKIPPED;
 				}
 			}
 		}
 
 		click(windowId, slot);
-		return true;
+		return SUCCESS;
 	}
 
 	private static void click(int windowId, int slot) {

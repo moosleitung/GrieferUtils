@@ -10,6 +10,7 @@ package dev.l3g7.griefer_utils.core.api;
 import dev.l3g7.griefer_utils.core.api.misc.CustomSSLSocketFactoryProvider;
 import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
 import dev.l3g7.griefer_utils.core.util.MinecraftUtil;
+import dev.l3g7.griefer_utils.features.uncategorized.debug.DebugSettings;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.ByteArrayOutputStream;
@@ -42,7 +43,7 @@ public class BugReporter {
 		.config("settings.automatic_bug_reporting.enabled")
 		.icon("bug")
 		.defaultValue(true)
-		.subSettings(shouldSendUuid);
+		.subSettings(shouldSendUuid, DebugSettings.enabled);
 
 	private static final Set<String> reportedBugs = new HashSet<>();
 	private static long timestampOfLastReport = 0;
