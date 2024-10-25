@@ -9,6 +9,7 @@ package dev.l3g7.griefer_utils.core.api.misc.config;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import dev.l3g7.griefer_utils.core.api.misc.DebounceTimer;
 import dev.l3g7.griefer_utils.core.api.util.IOUtil;
 
 import java.io.File;
@@ -25,71 +26,74 @@ public class Config {
 	/**
 	 * @return whether the given path exists.
 	 */
-    public static boolean has(String path) {
-        if (path == null)
-            return false;
+	public static boolean has(String path) {
+		if (path == null)
+			return false;
 
-        String[] parts = path.split("\\.");
-        return getPath(parts).has(last(parts));
-    }
+		String[] parts = path.split("\\.");
+		return getPath(parts).has(last(parts));
+	}
 
 	/**
 	 * @return the element stored at the given path, or null if no element is present.
 	 */
-    public static JsonElement get(String path) {
-        String[] parts = path.split("\\.");
-        return getPath(parts).get(last(parts));
-    }
+	public static JsonElement get(String path) {
+		String[] parts = path.split("\\.");
+		return getPath(parts).get(last(parts));
+	}
 
 	/**
 	 * Stores the given json element at the given path.
 	 */
-    public static void set(String path, JsonElement val) {
-        String[] parts = path.split("\\.");
-        getPath(parts).add(last(parts), val);
-    }
+	public static void set(String path, JsonElement val) {
+		String[] parts = path.split("\\.");
+		getPath(parts).add(last(parts), val);
+	}
 
 	/**
 	 * @return the parent object of the given path.
 	 */
-    private static JsonObject getPath(String[] parts) {
-        JsonObject o = get();
-        for (int i = 0; i < parts.length - 1; i++) {
-            if (!o.has(parts[i]) || !(o.get(parts[i]).isJsonObject()))
-                o.add(parts[i], new JsonObject());
-            o = o.get(parts[i]).getAsJsonObject();
-        }
-        return o;
-    }
+	private static JsonObject getPath(String[] parts) {
+		JsonObject o = get();
+		for (int i = 0; i < parts.length - 1; i++) {
+			if (!o.has(parts[i]) || !(o.get(parts[i]).isJsonObject()))
+				o.add(parts[i], new JsonObject());
+			o = o.get(parts[i]).getAsJsonObject();
+		}
+		return o;
+	}
 
 	private static final Object SAVE_LOCK = new Object();
+	private static final DebounceTimer debounceTimer = new DebounceTimer("Config", 1000);
 	// .minecraft/config/GrieferUtils.json
-    private static final File configFile = new File(new File("config"), "GrieferUtils.json");
+	private static final File configFile = new File(new File("config"), "GrieferUtils.json");
 	private static final File newConfigFile = new File(new File("config"), "GrieferUtils-new.json");
 	private static int hash = 0;
-    private static JsonObject config = null;
+	private static JsonObject config = null;
 
 	/**
 	 * Writes the configuration to the config file.
 	 */
-    public static void save() {
-	    if (config == null)
-		    config = new JsonObject();
+	public static void save() {
+		debounceTimer.schedule(() -> {
+			if (config == null)
+				config = new JsonObject();
 
-	    String json = IOUtil.gson.toJson(config);
+			String json = IOUtil.gson.toJson(config);
 
-	    synchronized (SAVE_LOCK) {
-		    if (json.hashCode() == hash) // Check if content has changed
-			    return;
+			synchronized (SAVE_LOCK) {
+				if (json.hashCode() == hash) // Check if content has changed
+					return;
 
-		    hash = json.hashCode();
-		    save(json, newConfigFile);
-		    save(json, configFile);
-	    }
-	    try {
-		    Files.deleteIfExists(newConfigFile.toPath());
-	    } catch (IOException ignored) {}
-    }
+				hash = json.hashCode();
+				save(json, newConfigFile);
+				save(json, configFile);
+			}
+			try {
+				Files.deleteIfExists(newConfigFile.toPath());
+			} catch (IOException ignored) {}
+		});
+	}
 
 	/**
 	 * Writes the configuration to the given file.
@@ -117,7 +121,7 @@ public class Config {
 		}
 
 		return config;
-    }
+	}
 
 	/**
 	 * Tries to load the config from the given file, returning whether it was successful.

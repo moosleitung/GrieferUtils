@@ -54,6 +54,7 @@ public class LocalTransactions {
 
 	public static final Set<Transaction> transactions = Collections.synchronizedSet(new TreeSet<>());
 	private static int idCounter = (int) (System.currentTimeMillis() & 0x3fffffff);
+	private static final DebounceTimer settingUpdateDebounce = new DebounceTimer("LocalTransactions", 1000);
 
 	static {
 		Runtime.getRuntime().addShutdownHook(new Thread(LocalTransactions::save));
@@ -90,7 +91,7 @@ public class LocalTransactions {
 		transaction.amount = amount;
 
 		transactions.add(transaction);
-		FileProvider.getBridge(TempTransactionsBridge.class).updateSettings();
+		settingUpdateDebounce.schedule(() -> FileProvider.getBridge(TempTransactionsBridge.class).updateSettings());
 		TIMER.schedule(LocalTransactions::save);
 	}
 
