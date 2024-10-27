@@ -25,6 +25,7 @@ import org.mariuszgromada.math.mxparser.Expression;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Base64;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,6 +33,7 @@ import static dev.l3g7.griefer_utils.core.api.bridges.LabyBridge.display;
 import static dev.l3g7.griefer_utils.core.api.bridges.LabyBridge.labyBridge;
 import static dev.l3g7.griefer_utils.core.util.MinecraftUtil.*;
 import static dev.l3g7.griefer_utils.features.player.scoreboard.BankScoreboard.getBankBalance;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 @Singleton
@@ -100,7 +102,12 @@ public class Calculator extends Feature {
 		.subSettings(decimalPlaces, HeaderSetting.create(),
 			autoWithdraw, starPlaceholder, placeholder, autoEquationDetect, prefix);
 
-	private static final Pattern SIMPLE_EQUATION_PATTERN = Pattern.compile("(?:(?<= )|^)(?<equation>[+-]?\\d+(?:[.,]\\d+)?[km]* *[+\\-/*^ekm] *[+-]?\\d+(?:[.,]\\d+)?[km]*|[+-]?\\d+(?:[.,]\\d+)?[km]+)(?:(?= )|$)", CASE_INSENSITIVE);
+	/**
+	 * Intellij thinks this pattern is invalid, although it is not. See Intellij Bug IJPL-101770. Reported in 2022, still not fixed :(
+	 * Encoded pattern: (?:(?<=(?<!/[^ ]*) )|^)(?<equation>[+-]?\d+(?:[.,]\d+)?[km]* *[+\-/*^e] *[+-]?\d+(?:[.,]\d+)?[km]*|[+-]?\d+(?:[.,]\d+)?[km]+)(?:(?= )|$)
+	 */
+	private static final String SIMPLE_EQUATION_B64 = "KD86KD88PSg/PCEvW14gXSopICl8XikoPzxlcXVhdGlvbj5bKy1dP1xkKyg/OlsuLF1cZCspP1trbV0qICpbK1wtLypeZV0gKlsrLV0/XGQrKD86Wy4sXVxkKyk/W2ttXSp8WystXT9cZCsoPzpbLixdXGQrKT9ba21dKykoPzooPz0gKXwkKQ==";
+	private static final Pattern SIMPLE_EQUATION_PATTERN = Pattern.compile(new String(Base64.getDecoder().decode(SIMPLE_EQUATION_B64), UTF_8), CASE_INSENSITIVE);
 	private static final Pattern PAYMENT_COMMAND_PATTERN = Pattern.compile(String.format("/pay %s (?<amount>.+)", Constants.UNFORMATTED_PLAYER_NAME_PATTERN), CASE_INSENSITIVE);
 	private static final BigDecimal THOUSAND = new BigDecimal(1000);
 
@@ -366,7 +373,7 @@ public class Calculator extends Feature {
 
 	private static String resolveLetterZeros(String equation, char letter, int zeros) {
 		StringBuilder builder = new StringBuilder(equation);
-		int index ;
+		int index;
 		while ((index = builder.indexOf(String.valueOf(letter))) != -1) {
 
 			int ks = 1;
@@ -394,6 +401,7 @@ public class Calculator extends Feature {
 		NONE("Nein"), SUGGEST("Vorschlagen"), SEND("Senden");
 
 		private final String name;
+
 		WithdrawAction(String name) {
 			this.name = name;
 		}
