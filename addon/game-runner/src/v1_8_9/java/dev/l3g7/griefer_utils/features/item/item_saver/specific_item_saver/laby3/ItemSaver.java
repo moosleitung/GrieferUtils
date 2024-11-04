@@ -18,6 +18,7 @@ import dev.l3g7.griefer_utils.core.api.file_provider.FileProvider;
 import dev.l3g7.griefer_utils.core.api.file_provider.Singleton;
 import dev.l3g7.griefer_utils.core.api.misc.Constants;
 import dev.l3g7.griefer_utils.core.api.misc.config.Config;
+import dev.l3g7.griefer_utils.core.api.reflection.Reflection;
 import dev.l3g7.griefer_utils.core.events.GuiModifyItemsEvent;
 import dev.l3g7.griefer_utils.core.events.MouseClickEvent;
 import dev.l3g7.griefer_utils.core.events.MouseClickEvent.LeftClickEvent;
@@ -38,12 +39,14 @@ import net.labymod.core.LabyModCore;
 import net.labymod.core.WorldRendererAdapter;
 import net.labymod.settings.elements.SettingsElement;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.inventory.GuiChest;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
@@ -319,7 +322,7 @@ public class ItemSaver extends ItemSaverCategory.ItemSaver implements TempItemSa
 		if (setting == null)
 			return;
 
-		if (setting.extremeDrop.get()) {
+		if (setting.extremeDrop.get() && !isAuctionHouse(event.windowId)) {
 			if (event.mode == 0 || event.mode == 6)
 				event.cancel();
 		}
@@ -430,6 +433,18 @@ public class ItemSaver extends ItemSaverCategory.ItemSaver implements TempItemSa
 
 		Config.set(entryKey, object);
 		Config.save();
+	}
+
+	public boolean isAuctionHouse(int windowId) {
+		if (!(mc().currentScreen instanceof GuiChest gc) || gc.inventorySlots.windowId != windowId)
+			return false;
+
+		IInventory lowerInv = Reflection.get(gc, "lowerChestInventory");
+		String title = lowerInv.getDisplayName().getFormattedText();
+		if (!title.startsWith("§6"))
+			return false;
+
+		return title.contains("Auktion") || title.startsWith("§6Filter auswählen");
 	}
 
 	@Override

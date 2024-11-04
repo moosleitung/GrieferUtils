@@ -11,25 +11,28 @@ import dev.l3g7.griefer_utils.core.api.bridges.Bridge;
 import dev.l3g7.griefer_utils.core.api.bridges.Bridge.ExclusiveTo;
 import dev.l3g7.griefer_utils.core.api.event_bus.EventListener;
 import dev.l3g7.griefer_utils.core.api.file_provider.Singleton;
-import dev.l3g7.griefer_utils.features.Feature.MainElement;
-import dev.l3g7.griefer_utils.core.settings.types.HeaderSetting;
-import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
+import dev.l3g7.griefer_utils.core.api.reflection.Reflection;
 import dev.l3g7.griefer_utils.core.events.GuiModifyItemsEvent;
 import dev.l3g7.griefer_utils.core.events.MouseClickEvent;
 import dev.l3g7.griefer_utils.core.events.WindowClickEvent;
 import dev.l3g7.griefer_utils.core.events.network.PacketEvent.PacketSendEvent;
 import dev.l3g7.griefer_utils.core.events.render.RenderItemOverlayEvent;
+import dev.l3g7.griefer_utils.core.misc.gui.elements.laby_polyfills.DrawUtils;
+import dev.l3g7.griefer_utils.core.settings.types.HeaderSetting;
+import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
+import dev.l3g7.griefer_utils.core.util.ItemUtil;
+import dev.l3g7.griefer_utils.features.Feature.MainElement;
 import dev.l3g7.griefer_utils.features.item.AutoTool;
 import dev.l3g7.griefer_utils.features.item.item_saver.ItemSaverCategory;
 import dev.l3g7.griefer_utils.features.item.item_saver.specific_item_saver.TempItemSaverBridge;
-import dev.l3g7.griefer_utils.core.misc.gui.elements.laby_polyfills.DrawUtils;
-import dev.l3g7.griefer_utils.core.util.ItemUtil;
+import net.minecraft.client.gui.inventory.GuiChest;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.client.C02PacketUseEntity;
 import net.minecraft.network.play.client.C07PacketPlayerDigging;
@@ -37,10 +40,9 @@ import net.minecraft.network.play.client.C08PacketPlayerBlockPlacement;
 import net.minecraft.util.ResourceLocation;
 
 import static dev.l3g7.griefer_utils.core.api.bridges.Bridge.Version.LABY_4;
+import static dev.l3g7.griefer_utils.core.util.MinecraftUtil.*;
 import static dev.l3g7.griefer_utils.features.item.item_saver.specific_item_saver.laby4.ItemProtection.ProtectionType.*;
 import static dev.l3g7.griefer_utils.features.item.item_saver.specific_item_saver.laby4.ItemProtection.UNPROTECTED;
-import static dev.l3g7.griefer_utils.core.util.MinecraftUtil.heldItem;
-import static dev.l3g7.griefer_utils.core.util.MinecraftUtil.inventory;
 import static net.minecraft.network.play.client.C02PacketUseEntity.Action.ATTACK;
 
 @Bridge
@@ -205,7 +207,7 @@ public class ItemSaver extends ItemSaverCategory.ItemSaver implements TempItemSa
 		}
 
 		ItemProtection protection = getProtection(event.itemStack);
-		if (protection.isProtectedAgainst(ITEM_PICKUP)) {
+		if (protection.isProtectedAgainst(ITEM_PICKUP) && !isAuctionHouse(event.windowId)) {
 			if (event.mode == 0 || event.mode == 6)
 				event.cancel();
 		}
@@ -254,6 +256,18 @@ public class ItemSaver extends ItemSaverCategory.ItemSaver implements TempItemSa
 	@Override
 	public boolean isProtectedAgainstItemPickup(ItemStack itemStack) {
 		return getProtection(itemStack).isProtectedAgainst(ITEM_PICKUP);
+	}
+
+	public boolean isAuctionHouse(int windowId) {
+		if (!(mc().currentScreen instanceof GuiChest gc) || gc.inventorySlots.windowId != windowId)
+			return false;
+
+		IInventory lowerInv = Reflection.get(gc, "lowerChestInventory");
+		String title = lowerInv.getDisplayName().getFormattedText();
+		if (!title.startsWith("§6"))
+			return false;
+
+		return title.contains("Auktion") || title.startsWith("§6Filter auswählen");
 	}
 
 }
