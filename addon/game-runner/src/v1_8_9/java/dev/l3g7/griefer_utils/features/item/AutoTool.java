@@ -190,6 +190,12 @@ public class AutoTool extends Feature {
 	}
 
 	public double getScore(ItemStack itemStack, IBlockState state, boolean canMine) {
+		if (!ServerCheck.isOnGrieferGames() && player().getHeldItem() != null && player().getHeldItem().getItem() == Items.wooden_axe)
+			return Integer.MIN_VALUE;
+
+		if (itemStack == null)
+			return 1000.1;
+
 		if (FileProvider.getBridge(TempItemSaverBridge.class).isProtectedAgainstLeftClick(itemStack))
 			return Integer.MIN_VALUE;
 
@@ -197,14 +203,14 @@ public class AutoTool extends Feature {
 			if (toolSaver.shouldCancel(itemStack))
 				return Integer.MIN_VALUE;
 
-		if (!ServerCheck.isOnGrieferGames() && player().getHeldItem() != null && player().getHeldItem().getItem() == Items.wooden_axe)
+		if (isOrbPotion(itemStack))
 			return Integer.MIN_VALUE;
 
 		if (isAdventureToolApplicable(itemStack, state))
 			return Integer.MAX_VALUE;
 
 		if (!isTool(itemStack)) {
-			if (itemStack == null || !itemStack.isItemStackDamageable())
+			if (!itemStack.isItemStackDamageable())
 				return 1000.1; // If no good tool was found, something without damage should be chosen
 
 			return 1000;
@@ -268,14 +274,19 @@ public class AutoTool extends Feature {
 	}
 
 	public static boolean isTool(ItemStack itemStack) {
-		if (itemStack == null)
-			return false;
-
 		return itemStack.getItem() instanceof ItemTool || itemStack.getItem() instanceof ItemShears;
 	}
 
+	private boolean isOrbPotion(ItemStack stack) {
+		NBTTagCompound tag = stack.getTagCompound();
+		if (tag == null)
+			return false;
+
+		return tag.hasKey("break_potion") || tag.hasKey("fly_potion");
+	}
+
 	private boolean isAdventureToolApplicable(ItemStack stack, IBlockState state) {
-		if (stack == null || !stack.hasTagCompound())
+		if (!stack.hasTagCompound())
 			return false;
 
 		// Not an adventure tool
