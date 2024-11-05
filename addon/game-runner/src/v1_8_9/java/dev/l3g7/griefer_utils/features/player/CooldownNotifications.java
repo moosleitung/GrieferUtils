@@ -74,7 +74,7 @@ public class CooldownNotifications extends Feature {
 	@EventListener(triggerWhenDisabled = true)
 	public void onMessageReceive(MessageReceiveEvent event) {
 		if (event.message.getUnformattedText().matches("^Du hast .+-Booster erhalten\\. Danke für deine Unterstützung von GrieferGames!$"))
-			endDates.put("/grieferboost", System.currentTimeMillis() + HOURS.toMillis(24 * 14 - 1));
+			endDates.put("/grieferboost", System.currentTimeMillis() + HOURS.toMillis(24 * 14) + 1000);
 		else if (event.message.getUnformattedText().equals("[CaseOpening] Du hast 2 Kisten erhalten."))
 			endDates.put("/freekiste", System.currentTimeMillis() + DAYS.toMillis(14) + 1000);
 		else if (event.message.getUnformattedText().matches("^\\[Kopf] Du hast einen .+[ -]Kopf erhalten[!.]$"))
