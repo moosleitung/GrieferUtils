@@ -28,6 +28,13 @@ public class Reflection {
 	}
 
 	/**
+	 * @return the mapping target.
+	 */
+	public static Mapping getMappingTarget() {
+		return mappingTarget;
+	}
+
+	/**
 	 * @return the value of a field.
 	 */
 	public static <V> V get(Object target, String name) {

@@ -11,6 +11,7 @@ import dev.l3g7.griefer_utils.core.api.bridges.LabyBridge;
 import dev.l3g7.griefer_utils.core.api.event_bus.EventListener;
 import dev.l3g7.griefer_utils.core.api.mapping.Mapping;
 import dev.l3g7.griefer_utils.core.api.util.IOUtil;
+import dev.l3g7.griefer_utils.core.api.util.UnsafeJsonSerializer;
 import dev.l3g7.griefer_utils.core.events.network.PacketEvent.PacketReceiveEvent;
 import dev.l3g7.griefer_utils.core.events.network.PacketEvent.PacketSendEvent;
 import dev.l3g7.griefer_utils.core.settings.types.StringSetting;
@@ -91,7 +92,7 @@ class PacketDumper {
 				return;
 
 			try {
-				System.out.println(IOUtil.gson.toJson(packet));
+				System.out.println(IOUtil.gson.toJson(UnsafeJsonSerializer.toJson(packet)));
 			} catch (Throwable t) {
 				System.out.println("Packet's fields could not be dumped");
 			}
