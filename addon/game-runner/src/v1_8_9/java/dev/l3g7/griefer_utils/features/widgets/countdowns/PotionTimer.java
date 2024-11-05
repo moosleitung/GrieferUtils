@@ -104,7 +104,7 @@ public class PotionTimer extends Widget {
 
 		String end = matcher.group("end");
 		try {
-			potions.get("fly_potion").countdown = TPSCountdown.fromEnd(DATE_FORMAT.parse(end).getTime());
+			potions.get("fly_potion").countdown = TPSCountdown.replaceFromEnd(potions.get("fly_potion").countdown, DATE_FORMAT.parse(end).getTime());
 		} catch (ParseException e) {
 			BugReporter.reportError(new Throwable("Error while parsing fly potion end from " + event.message.getFormattedText(), e));
 		}
@@ -125,7 +125,7 @@ public class PotionTimer extends Widget {
 		NBTTagCompound tag = heldItem.getTagCompound();
 		for (Map.Entry<String, PotionData> entry : potions.entrySet()) {
 			if (tag.hasKey(entry.getKey())) {
-				entry.getValue().countdown = TPSCountdown.fromMinutes(15);
+				entry.getValue().countdown = TPSCountdown.replaceFromMins(entry.getValue().countdown, 15);
 				break;
 			}
 		}

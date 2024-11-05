@@ -130,12 +130,12 @@ public class Booster extends Widget {
 			Queue<TPSCountdown> dates = booster.expirationDates;
 
 			if (booster.stackable) {
-				dates.add(TPSCountdown.fromMinutes(15));
+				dates.add(TPSCountdown.replaceFromMins(null, 15));
 				return;
 			}
 
 			if (dates.isEmpty())
-				dates.add(TPSCountdown.fromMinutes(15));
+				dates.add(TPSCountdown.replaceFromMins(null, 15));
 			else
 				dates.peek().addMinutes(15);
 
@@ -163,7 +163,7 @@ public class Booster extends Widget {
 			int min = Integer.parseInt(m.group(1));
 			int sek = Integer.parseInt(m.group(2));
 
-			expirationDates.add(TPSCountdown.fromSeconds(min * 60 + sek));
+			expirationDates.add(TPSCountdown.replaceFromSeconds(null, min * 60 + sek));
 		}
 
 	}
@@ -190,7 +190,14 @@ public class Booster extends Widget {
 		}
 
 		private boolean isExpired() {
-			expirationDates.removeIf(TPSCountdown::isExpired);
+			expirationDates.removeIf(t -> {
+				if (t.isExpired()) {
+					t.destroy();
+					return true;
+				}
+
+				return false;
+			});
 			return expirationDates.isEmpty();
 		}
 

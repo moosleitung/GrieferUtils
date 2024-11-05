@@ -72,9 +72,9 @@ public class MobRemover extends SimpleWidget {
 	public void onMessageReceive(MessageReceiveEvent event) {
 		Matcher matcher = MOB_REMOVER_PATTERN.matcher(event.message.getFormattedText());
 		if (matcher.matches())
-			countdown = TPSCountdown.fromMinutes(Integer.parseInt(matcher.group("minutes")));
+			countdown = TPSCountdown.replaceFromMins(countdown, Integer.parseInt(matcher.group("minutes")));
 		else if (event.message.getFormattedText().matches("^§r§8\\[§r§6MobRemover§r§8] §r§7Es wurden (?:§r§\\d+§r§7|keine) Tiere entfernt\\.§r$"))
-			countdown = TPSCountdown.fromMinutes(15);
+			countdown = TPSCountdown.replaceFromMins(countdown, 15);
 		else
 			return;
 
@@ -93,7 +93,7 @@ public class MobRemover extends SimpleWidget {
 
 		CompletableFuture.supplyAsync((Supplier<Long>) () -> GUClient.get().getMobRemoverData(event.citybuild)).thenAccept(end -> {
 			if (end != null)
-				countdown = TPSCountdown.fromEnd(end);
+				countdown = TPSCountdown.replaceFromEnd(countdown, end);
 		});
 	}
 

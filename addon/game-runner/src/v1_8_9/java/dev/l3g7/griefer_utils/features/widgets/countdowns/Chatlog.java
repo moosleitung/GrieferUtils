@@ -72,7 +72,7 @@ public class Chatlog extends SimpleWidget {
 		String msg = event.message.getUnformattedText();
 
 		if (msg.startsWith("[Chat-Log] Der Chat-Log wurde erfolgreich gespeichert: ") || msg.equals("------------ Chat-Log-Hilfe ------------")) {
-			countdown = TPSCountdown.fromSeconds(30);
+			countdown = TPSCountdown.replaceFromSeconds(countdown, 30);
 			sentCmd = false;
 		}
 	}

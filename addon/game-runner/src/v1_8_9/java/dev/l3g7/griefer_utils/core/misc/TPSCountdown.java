@@ -10,40 +10,41 @@ package dev.l3g7.griefer_utils.core.misc;
 import dev.l3g7.griefer_utils.core.api.event_bus.EventListener;
 import dev.l3g7.griefer_utils.core.api.event_bus.EventRegisterer;
 import dev.l3g7.griefer_utils.core.api.util.Util;
-import dev.l3g7.griefer_utils.core.events.TickEvent.ClientTickEvent;
 import dev.l3g7.griefer_utils.core.events.network.PacketEvent;
 import net.minecraft.network.play.server.S03PacketTimeUpdate;
-import net.minecraft.network.play.server.S07PacketRespawn;
 
 import static dev.l3g7.griefer_utils.core.util.MinecraftUtil.mc;
 
 public class TPSCountdown {
 
-	private boolean expired = false;
-	private long lastServerTime = -1;
-	private int serverTicksRemaining; // Ticks remaining
-	private int clientTicksRemaining;
+	private int secondsRemaining;
 
-	public static TPSCountdown fromMinutes(int minutes) { return fromSeconds(minutes * 60); }
-	public static TPSCountdown fromSeconds(int seconds) { return new TPSCountdown(seconds * 20); }
-	public static TPSCountdown fromEnd(long end) {
-		long ms = end - System.currentTimeMillis();
-		return new TPSCountdown((int) (ms / 50));
+	public static TPSCountdown replaceFromMins(TPSCountdown old, int minutes) {
+		return replaceFromSeconds(old, minutes * 60);
 	}
 
-	public TPSCountdown(int ticksRemaining) {
-		serverTicksRemaining = clientTicksRemaining = ticksRemaining;
+	public static TPSCountdown replaceFromEnd(TPSCountdown old, long end) {
+		long ms = end - System.currentTimeMillis();
+		return replaceFromSeconds(old, (int) (ms / 1000));
+	}
+
+	public static TPSCountdown replaceFromSeconds(TPSCountdown old, int seconds) {
+		if (old != null)
+			old.destroy();
+		return new TPSCountdown(seconds);
+	}
+
+	private TPSCountdown(int secondsRemaining) {
+		this.secondsRemaining = secondsRemaining;
 		EventRegisterer.register(this);
 	}
 
 	public int secondsRemaining() {
-		return (clientTicksRemaining + 19 /* round up */) / 20;
+		return secondsRemaining;
 	}
 
-	public void addMinutes(int minutes) { addTicks(minutes * 1200); }
-	public void addTicks(int ticks) {
-		serverTicksRemaining += ticks;
-		clientTicksRemaining += ticks;
+	public void addMinutes(int minutes) {
+		secondsRemaining += 60 * minutes;
 	}
 
 	public void checkWarning(String title, int warnTime) {
@@ -57,46 +58,17 @@ public class TPSCountdown {
 		mc().ingameGUI.displayTitle(null, null, 0, 2, 3);
 	}
 
-	/**
-	 * Returns if the countdown has expired, destroying it if that's the case.
-	 */
 	public boolean isExpired() {
-		if (clientTicksRemaining > 0)
-			return false;
-
-		if (!expired) {
-			EventRegisterer.unregister(this);
-			expired = true;
-		}
-
-		return true;
+		return secondsRemaining <= 0;
 	}
 
-	@EventListener
-	private void onTick(ClientTickEvent event) {
-		if (!ServerCheck.isOnGrieferGames())
-			return;
-
-		clientTicksRemaining--;
-	}
-
-	@EventListener
-	private void onWorldSwitch(PacketEvent.PacketReceiveEvent<S07PacketRespawn> event) {
-		lastServerTime = -1;
+	public void destroy() {
+		EventRegisterer.unregister(this);
 	}
 
 	@EventListener
 	private void onTimeUpdate(PacketEvent.PacketReceiveEvent<S03PacketTimeUpdate> event) {
-		if (lastServerTime == -1) {
-			lastServerTime = event.packet.getWorldTime();
-			return;
-		}
-
-		int passedTicks = (int) (event.packet.getWorldTime() - lastServerTime);
-		lastServerTime = event.packet.getWorldTime();
-
-		serverTicksRemaining = Math.max(serverTicksRemaining - passedTicks, clientTicksRemaining);
-		clientTicksRemaining = serverTicksRemaining;
+		secondsRemaining--;
 	}
 
 }
