@@ -11,6 +11,7 @@ import dev.l3g7.griefer_utils.core.api.bridges.Bridge.ExclusiveTo;
 import dev.l3g7.griefer_utils.core.injection.InheritedInvoke;
 import dev.l3g7.griefer_utils.labymod.laby3.settings.MainPage;
 import net.labymod.settings.LabyModAddonsGui;
+import net.labymod.settings.elements.AddonElement;
 import net.labymod.settings.elements.SettingsElement;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
@@ -34,10 +35,16 @@ public class MixinLabyModAddonsGui {
 	@Shadow
 	private ArrayList<SettingsElement> path;
 
+	@Shadow
+	private AddonElement openedAddonSettings;
+
 	@InheritedInvoke(GuiScreen.class)
 	@Inject(method = "actionPerformed", at = @At("HEAD"), remap = true)
 	private void injectActionPerformed(GuiButton button, CallbackInfo ci) {
-		if (button != buttonBack || path.size() > 1)
+		if (button != buttonBack
+			|| path.size() > 1
+			|| openedAddonSettings == null
+			|| openedAddonSettings.getAddonInfo().getImageURL().equals("griefer_utils_icon"))
 			return;
 
 		MainPage.filter.set(path.isEmpty() ? "" : MainPage.filter.get());
