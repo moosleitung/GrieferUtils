@@ -9,29 +9,12 @@ package dev.l3g7.griefer_utils.labymod.laby3.temp;
 
 import dev.l3g7.griefer_utils.core.api.bridges.Bridge.ExclusiveTo;
 import dev.l3g7.griefer_utils.labymod.laby3.bridges.LabyBridgeImpl;
-import net.labymod.core.LabyModCore;
-import net.labymod.core_implementation.mc18.gui.GuiChatAdapter;
-import net.labymod.ingamechat.IngameChatManager;
-import net.labymod.ingamechat.renderer.ChatRenderer;
-import net.labymod.ingamechat.renderer.MessageData;
-import net.labymod.ingamechat.tools.filter.Filters;
-import net.labymod.servermanager.ChatDisplayAction;
 import net.labymod.utils.manager.TagManager;
 import net.minecraft.util.IChatComponent;
-import net.minecraftforge.event.ForgeEventFactory;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
-import org.spongepowered.asm.mixin.injection.Redirect;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
-
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 
 import static dev.l3g7.griefer_utils.core.api.bridges.Bridge.Version.LABY_3;
 import static dev.l3g7.griefer_utils.core.api.bridges.LabyBridge.labyBridge;
