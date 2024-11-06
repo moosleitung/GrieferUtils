@@ -55,6 +55,9 @@ public class BugReporter {
 		if (System.currentTimeMillis() - timestampOfLastReport < 10_000)
 			return false; // Last report less than 10s ago, don't report
 
+		if (reportedBugs.size() >= 10)
+			return false; // Only report up to 10 errors per session
+
 		// Don't report OutOfMemoryErrors
 		if (error instanceof OutOfMemoryError) {
 			try {
