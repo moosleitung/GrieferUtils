@@ -12,10 +12,10 @@ import dev.l3g7.griefer_utils.core.api.event_bus.Priority;
 import dev.l3g7.griefer_utils.core.api.file_provider.Singleton;
 import dev.l3g7.griefer_utils.core.api.misc.Constants;
 import dev.l3g7.griefer_utils.core.api.misc.Named;
+import dev.l3g7.griefer_utils.core.events.MessageEvent.MessageModifyEvent;
 import dev.l3g7.griefer_utils.core.settings.types.DropDownSetting;
 import dev.l3g7.griefer_utils.core.settings.types.StringSetting;
 import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
-import dev.l3g7.griefer_utils.core.events.MessageEvent.MessageModifyEvent;
 import dev.l3g7.griefer_utils.features.Feature;
 import net.minecraft.init.Items;
 import net.minecraft.util.ChatComponentText;
@@ -42,7 +42,7 @@ public class RealMoney extends Feature {
 		.icon("coin_pile")
 		.subSettings(tag, position);
 
-	@EventListener(priority = Priority.LOWEST)
+	@EventListener(priority = Priority.LOW)
 	public void onMessageReceive(MessageModifyEvent event) {
 		if (!Constants.PAYMENT_RECEIVE_PATTERN.matcher(event.original.getFormattedText()).matches())
 			return;

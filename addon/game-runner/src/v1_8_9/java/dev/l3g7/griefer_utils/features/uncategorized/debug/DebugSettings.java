@@ -25,6 +25,7 @@ public class DebugSettings {
 		.description("Verschiedene Werkzeuge, um GrieferUtils zu debuggen.", "Es wird empfohlen, dies nur auf Anweisung vom GrieferUtils-Team zu aktivieren.")
 		.icon(Blocks.command_block)
 		.subSettings(
+			MessageDumper.enabled,
 			PacketDumper.enabled,
 			ThreadDumper.enabled,
 			RecraftLogger.enabled,

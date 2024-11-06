@@ -11,9 +11,9 @@ import com.google.gson.JsonObject;
 import dev.l3g7.griefer_utils.core.api.event_bus.EventListener;
 import dev.l3g7.griefer_utils.core.api.file_provider.Singleton;
 import dev.l3g7.griefer_utils.core.api.util.IOUtil;
+import dev.l3g7.griefer_utils.core.events.MessageEvent;
 import dev.l3g7.griefer_utils.core.settings.types.StringSetting;
 import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
-import dev.l3g7.griefer_utils.core.events.MessageEvent;
 import dev.l3g7.griefer_utils.features.Feature;
 import net.minecraft.init.Items;
 import net.minecraft.util.ChatComponentText;
@@ -23,7 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.IllegalFormatException;
 
-import static dev.l3g7.griefer_utils.core.api.event_bus.Priority.LOWEST;
+import static dev.l3g7.griefer_utils.core.api.event_bus.Priority.LOW;
 import static dev.l3g7.griefer_utils.core.util.MinecraftUtil.mc;
 
 @Singleton
@@ -81,7 +81,7 @@ public class ChatTime extends Feature {
 		style.defaultValue("&7[&6%s&7] ");
 	}
 
-	@EventListener(priority = LOWEST)
+	@EventListener(priority = LOW)
 	public void onMessageModifyChat(MessageEvent.MessageModifyEvent event) {
 		String time = String.format(style.get(), DATE_FORMAT.format(new Date())).replace('&', '§') + "§r";
 		event.setMessage(new ChatComponentText(time).appendSibling(event.message));
