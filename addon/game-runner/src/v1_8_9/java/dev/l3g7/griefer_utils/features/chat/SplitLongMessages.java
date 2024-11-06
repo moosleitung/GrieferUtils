@@ -148,7 +148,7 @@ public class SplitLongMessages extends Feature {
 			while (word.length() > length) {
 				if (length(text) >= length) {
 					messages.add(text.toString());
-					text = new StringBuilder();
+					text = new StringBuilder(getLastColor(text.toString()));
 				}
 
 				int index = length;
@@ -156,6 +156,9 @@ public class SplitLongMessages extends Feature {
 					index = Math.max(0, index - length(text));
 
 				String part = word.substring(0, index);
+				if (part.endsWith("&"))
+					part = word.substring(0, --index);
+
 				word = word.substring(index);
 
 				if (length(text) > 0)
@@ -166,7 +169,7 @@ public class SplitLongMessages extends Feature {
 
 			if (length(text) + word.length() > length) {
 				messages.add(text.toString());
-				text = new StringBuilder();
+				text = new StringBuilder(getLastColor(text.toString()));
 			}
 
 			if (length(text) > 0)
@@ -179,6 +182,27 @@ public class SplitLongMessages extends Feature {
 			messages.add(text.toString());
 
 		return messages;
+	}
+
+	private static String getLastColor(String text) {
+		int lastIndex = text.length();
+
+		while (true) {
+			lastIndex = text.lastIndexOf('&', lastIndex);
+			if (lastIndex == -1)
+				return "";
+
+			if (lastIndex == text.length() - 1)
+				continue;
+
+			char colorChar = Character.toLowerCase(text.charAt(lastIndex + 1));
+			if (colorChar == 'r')
+				return "";
+
+			if (colorChar >= '0' && colorChar <= '9'
+				|| colorChar >= 'a' && colorChar <= 'f')
+				return "&" + colorChar;
+		}
 	}
 
 	private static int length(StringBuilder stringBuilder) {
