@@ -542,7 +542,7 @@ public class SpawnCounter extends Widget { // NOTE: cleanup
 					return;
 
 				line.setState(VISIBLE);
-				line.updateLeaderboardLine(UUID.fromString(entry.id), entry.name, other.score);
+				line.updateLeaderboardLine(UUID.fromString(entry.getId()), entry.name, other.score);
 			}
 
 			@ExclusiveTo(LABY_4)

@@ -13,21 +13,21 @@ import dev.l3g7.griefer_utils.core.api.event_bus.Priority;
 import dev.l3g7.griefer_utils.core.api.misc.Constants;
 import dev.l3g7.griefer_utils.core.api.misc.Named;
 import dev.l3g7.griefer_utils.core.api.util.IOUtil;
-import dev.l3g7.griefer_utils.features.Feature;
-import dev.l3g7.griefer_utils.core.settings.AbstractSetting;
-import dev.l3g7.griefer_utils.core.settings.BaseSetting;
-import dev.l3g7.griefer_utils.core.settings.types.DropDownSetting;
-import dev.l3g7.griefer_utils.core.settings.types.HeaderSetting;
-import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
 import dev.l3g7.griefer_utils.core.events.DisplayNameGetEvent;
 import dev.l3g7.griefer_utils.core.events.GuiModifyItemsEvent;
 import dev.l3g7.griefer_utils.core.events.MessageEvent.MessageModifyEvent;
 import dev.l3g7.griefer_utils.core.events.network.TabListEvent;
 import dev.l3g7.griefer_utils.core.misc.NameCache;
+import dev.l3g7.griefer_utils.core.settings.AbstractSetting;
+import dev.l3g7.griefer_utils.core.settings.BaseSetting;
 import dev.l3g7.griefer_utils.core.settings.player_list.PlayerListEntry;
 import dev.l3g7.griefer_utils.core.settings.player_list.PlayerListSettingLaby3;
 import dev.l3g7.griefer_utils.core.settings.player_list.PlayerListSettingLaby4;
+import dev.l3g7.griefer_utils.core.settings.types.DropDownSetting;
+import dev.l3g7.griefer_utils.core.settings.types.HeaderSetting;
+import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
 import dev.l3g7.griefer_utils.core.util.PlayerUtil;
+import dev.l3g7.griefer_utils.features.Feature;
 import net.minecraft.event.ClickEvent;
 import net.minecraft.event.HoverEvent;
 import net.minecraft.init.Blocks;
@@ -238,7 +238,7 @@ public abstract class PlayerList extends Feature {
 			return true;
 
 		for (PlayerListEntry entry : customEntries.get())
-			if (name == null ? uuid.toString().equalsIgnoreCase(entry.id) : name.equalsIgnoreCase(entry.name))
+			if (name == null ? uuid.toString().equalsIgnoreCase(entry.getId()) : name.equalsIgnoreCase(entry.name))
 				return true;
 
 		return false;

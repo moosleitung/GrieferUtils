@@ -10,17 +10,17 @@ package dev.l3g7.griefer_utils.features.render;
 import dev.l3g7.griefer_utils.core.api.event_bus.EventListener;
 import dev.l3g7.griefer_utils.core.api.file_provider.Singleton;
 import dev.l3g7.griefer_utils.core.api.reflection.Reflection;
-import dev.l3g7.griefer_utils.features.Feature;
-import dev.l3g7.griefer_utils.core.settings.AbstractSetting;
-import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
 import dev.l3g7.griefer_utils.core.events.PlaySoundAtEntityEvent;
 import dev.l3g7.griefer_utils.core.events.PlaySoundEvent;
 import dev.l3g7.griefer_utils.core.events.TickEvent;
 import dev.l3g7.griefer_utils.core.events.render.RenderPlayerEvent;
+import dev.l3g7.griefer_utils.core.settings.AbstractSetting;
 import dev.l3g7.griefer_utils.core.settings.player_list.PlayerListEntry;
 import dev.l3g7.griefer_utils.core.settings.player_list.PlayerListSettingLaby3;
 import dev.l3g7.griefer_utils.core.settings.player_list.PlayerListSettingLaby4;
+import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
 import dev.l3g7.griefer_utils.core.util.PlayerUtil;
+import dev.l3g7.griefer_utils.features.Feature;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.potion.Potion;
@@ -148,7 +148,7 @@ public class PlayerHider extends Feature {
 			return false;
 
 		for (PlayerListEntry entry : excludedPlayers.get())
-			if (name == null ? uuid.toString().equalsIgnoreCase(entry.id) : name.equalsIgnoreCase(entry.name))
+			if (name == null ? uuid.toString().equalsIgnoreCase(entry.getId()) : name.equalsIgnoreCase(entry.name))
 				return true;
 
 		return false;
