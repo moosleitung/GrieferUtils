@@ -8,6 +8,7 @@
 package dev.l3g7.griefer_utils.core.settings.player_list;
 
 import dev.l3g7.griefer_utils.core.api.misc.Constants;
+import dev.l3g7.griefer_utils.core.api.misc.functions.Consumer;
 import dev.l3g7.griefer_utils.core.api.misc.xbox_profile_resolver.core.XboxProfileResolver;
 import net.minecraft.client.network.NetworkPlayerInfo;
 import net.minecraft.client.renderer.texture.ITextureObject;
@@ -23,6 +24,10 @@ public class PlayerListEntry {
 	public static final PlayerListEntry INVALID_PLAYER = new PlayerListEntry();
 
 	public static PlayerListEntry getEntry(String name) {
+		return getEntry(name, s -> {});
+	}
+
+		public static PlayerListEntry getEntry(String name, Consumer<String> idConsumer) {
 		if (!Constants.UNFORMATTED_PLAYER_NAME_PATTERN.matcher(name).matches())
 			return INVALID_PLAYER;
 
@@ -30,11 +35,13 @@ public class PlayerListEntry {
 	}
 
 	public String name;
-	public String id; // The uuid / xuid of the Player
+	private String id; // The uuid / xuid of the Player
 	public boolean oldSkin;
 	public ITextureObject skin = null;
 	public boolean loaded = false; // Whether the entry's name and id were loaded
 	protected boolean exists = true;
+
+	private Consumer<String> idConsumer;
 
 	private PlayerListEntry() {
 		exists = false;
@@ -44,6 +51,14 @@ public class PlayerListEntry {
 		this.name = name;
 		this.id = id;
 		load();
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		idConsumer.accept(this.id = id);
 	}
 
 	public boolean isMojang() {

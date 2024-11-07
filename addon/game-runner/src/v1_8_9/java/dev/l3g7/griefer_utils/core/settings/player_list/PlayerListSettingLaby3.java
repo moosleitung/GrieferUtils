@@ -11,9 +11,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonPrimitive;
 import dev.l3g7.griefer_utils.core.api.event_bus.EventRegisterer;
 import dev.l3g7.griefer_utils.core.api.reflection.Reflection;
-import dev.l3g7.griefer_utils.labymod.laby3.settings.Laby3Setting;
-import dev.l3g7.griefer_utils.core.settings.BaseSetting;
 import dev.l3g7.griefer_utils.core.misc.gui.elements.laby_polyfills.DrawUtils;
+import dev.l3g7.griefer_utils.core.settings.BaseSetting;
+import dev.l3g7.griefer_utils.labymod.laby3.settings.Laby3Setting;
 import net.labymod.core.LabyModCore;
 import net.labymod.gui.elements.ModTextField;
 import net.labymod.main.ModTextures;
@@ -34,7 +34,7 @@ public class PlayerListSettingLaby3 extends ControlElement implements Laby3Setti
 
 	private final ExtendedStorage<List<PlayerListEntry>> storage = new ExtendedStorage<>(list -> {
 		JsonArray array = new JsonArray();
-		list.forEach(e -> array.add(new JsonPrimitive(e.id)));
+		list.forEach(e -> array.add(new JsonPrimitive(e.getId())));
 		return array;
 	}, array -> {
 		List<PlayerListEntry> list = new ArrayList<>();
@@ -88,7 +88,7 @@ public class PlayerListSettingLaby3 extends ControlElement implements Laby3Setti
 			return false;
 
 		for (PlayerListEntry entry : get())
-			if (name == null ? uuid.toString().equalsIgnoreCase(entry.id) : name.equalsIgnoreCase(entry.name))
+			if (name == null ? uuid.toString().equalsIgnoreCase(entry.getId()) : name.equalsIgnoreCase(entry.name))
 				return true;
 
 		return false;

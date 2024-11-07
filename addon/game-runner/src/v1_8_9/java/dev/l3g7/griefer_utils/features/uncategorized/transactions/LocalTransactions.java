@@ -9,6 +9,7 @@ package dev.l3g7.griefer_utils.features.uncategorized.transactions;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+import com.mojang.authlib.GameProfile;
 import dev.l3g7.griefer_utils.core.api.bridges.LabyBridge;
 import dev.l3g7.griefer_utils.core.api.event_bus.EventListener;
 import dev.l3g7.griefer_utils.core.api.file_provider.FileProvider;
@@ -20,6 +21,8 @@ import dev.l3g7.griefer_utils.core.events.MessageEvent.MessageReceiveEvent;
 import dev.l3g7.griefer_utils.core.events.annotation_events.OnEnable;
 import dev.l3g7.griefer_utils.core.misc.NameCache;
 import dev.l3g7.griefer_utils.core.misc.mysterymod_connection.packets.transactions.Transaction;
+import dev.l3g7.griefer_utils.core.settings.player_list.PlayerListEntry;
+import net.minecraft.client.network.NetworkPlayerInfo;
 import org.apache.commons.lang3.tuple.Pair;
 
 import javax.crypto.SecretKey;
@@ -73,21 +76,39 @@ public class LocalTransactions {
 		double amount = Double.parseDouble(matcher.group("amount").replace(",", ""));
 		String nick = matcher.group("name").replaceAll("§.", "");
 		String name = NameCache.ensureRealName(nick);
-		UUID uuid = NameCache.getUUID(nick);
-		if (uuid == null)
-			uuid = mc().getNetHandler().getPlayerInfo(name).getGameProfile().getId();
-
 		if (name.equals(name()) && received)
 			// Show transactions to yourself only once
 			return;
 
+		UUID uuid = NameCache.getUUID(nick);
+		nethandler:
+		if (uuid == null) {
+			NetworkPlayerInfo playerInfo = mc().getNetHandler().getPlayerInfo(name);
+			if (playerInfo == null)
+				break nethandler;
+
+			GameProfile gameProfile = playerInfo.getGameProfile();
+			if (gameProfile == null)
+				break nethandler;
+
+			addNewTransaction(received, name, gameProfile.getId(), amount, System.currentTimeMillis());
+			return;
+		}
+
+		long timestamp = System.currentTimeMillis();
+		PlayerListEntry.getEntry(name, id -> {
+			addNewTransaction(received, name, UUID.fromString(id), amount, timestamp);
+		});
+	}
+
+	private static void addNewTransaction(boolean received, String name, UUID uuid, double amount, long timestamp) {
 		Transaction transaction = new Transaction();
 		transaction.id = idCounter++;
 		transaction.username = received ? name : name();
 		transaction.recipientname = received ? name() : name;
 		transaction.userId = String.valueOf(received ? uuid : uuid());
 		transaction.recipientId = String.valueOf(received ? uuid() : uuid);
-		transaction.timestamp = System.currentTimeMillis();
+		transaction.timestamp = timestamp;
 		transaction.amount = amount;
 
 		transactions.add(transaction);

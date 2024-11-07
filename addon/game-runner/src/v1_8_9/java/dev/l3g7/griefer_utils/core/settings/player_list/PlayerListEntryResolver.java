@@ -42,7 +42,7 @@ public class PlayerListEntryResolver {
 	 * PlayerDB doesn't provide the skin, but since xbox has a low rate-limit, it is used to verify the existence.
 	 */
 	public static void loadFromPlayerDB(PlayerListEntry entry) {
-		IOUtil.URLReadOperation op = IOUtil.read("https://playerdb.co/api/player/xbox/" + (entry.id == null ? entry.name.substring(1) : entry.id));
+		IOUtil.URLReadOperation op = IOUtil.read("https://playerdb.co/api/player/xbox/" + (entry.getId() == null ? entry.name.substring(1) : entry.getId()));
 
 		if (op.getResponseCode() != 200) {
 			entry.exists = false;
@@ -56,7 +56,7 @@ public class PlayerListEntryResolver {
 
 		JsonObject playerData = data.getAsJsonObject("data").getAsJsonObject("player");
 
-		entry.id = playerData.get("id").getAsString();
+		entry.setId(playerData.get("id").getAsString());
 		entry.name = "!" + playerData.get("username").getAsString().replace(' ', '+');
 		entry.loaded = true;
 	}
@@ -65,14 +65,14 @@ public class PlayerListEntryResolver {
 		if (!XboxProfileResolver.isAvailable())
 			return;
 
-		XboxProfile profile = entry.name == null ? XboxProfileResolver.getProfileByXUID(entry.id) : XboxProfileResolver.getProfileByGamerTag(entry.name.substring(1));
+		XboxProfile profile = entry.name == null ? XboxProfileResolver.getProfileByXUID(entry.getId()) : XboxProfileResolver.getProfileByGamerTag(entry.name.substring(1));
 		if (profile == null) {
 			entry.exists = false;
 			LOOKUP_MAP.put(entry.name, entry);
 			return;
 		}
 
-		entry.id = profile.id;
+		entry.setId(profile.id);
 		entry.name = "!" + profile.displayName.replace(' ', '+');
 		entry.loaded = true;
 
@@ -90,7 +90,7 @@ public class PlayerListEntryResolver {
 	}
 
 	public static void loadFromMojang(PlayerListEntry entry) throws IOException {
-		if (entry.id == null) {
+		if (entry.getId() == null) {
 			IOUtil.URLReadOperation op = IOUtil.read("https://api.mojang.com/users/profiles/minecraft/" + entry.name);
 			// API returns 404 or 204 when an unknown user is requested.
 			if (op.getResponseCode() == 404 || op.getResponseCode() == 204) {
@@ -105,9 +105,9 @@ public class PlayerListEntryResolver {
 			}
 
 			JsonObject data = op.asJsonObject().orElseThrow(() -> new JsonParseException("Invalid response for " + entry.name));
-			entry.id = data.get("id").getAsString().replaceAll("(.{8})(.{4})(.{4})(.{4})(.{12})", "$1-$2-$3-$4-$5");
+			entry.setId(data.get("id").getAsString().replaceAll("(.{8})(.{4})(.{4})(.{4})(.{12})", "$1-$2-$3-$4-$5"));
 		}
-		JsonObject profile = IOUtil.read("https://sessionserver.mojang.com/session/minecraft/profile/" + entry.id).asJsonObject().orElse(null);
+		JsonObject profile = IOUtil.read("https://sessionserver.mojang.com/session/minecraft/profile/" + entry.getId()).asJsonObject().orElse(null);
 		if (profile == null) {
 			loadFromAshcon(entry);
 			return;
@@ -138,9 +138,9 @@ public class PlayerListEntryResolver {
 	 * Ashcon's API doesn't have rate-limiting but is much slower, so Mojang's API is usually preferred.
 	 */
 	public static void loadFromAshcon(PlayerListEntry entry) throws IOException {
-		JsonObject profile = IOUtil.read("https://api.ashcon.app/mojang/v2/user/" + (entry.name == null ? entry.id : entry.name)).asJsonObject().orElseThrow(() -> new JsonParseException("Invalid response for " + entry.name));
+		JsonObject profile = IOUtil.read("https://api.ashcon.app/mojang/v2/user/" + (entry.name == null ? entry.getId() : entry.name)).asJsonObject().orElseThrow(() -> new JsonParseException("Invalid response for " + entry.name));
 		entry.name = profile.get("username").getAsString();
-		entry.id = profile.get("uuid").getAsString();
+		entry.setId(profile.get("uuid").getAsString());
 		entry.loaded = true;
 		entry.oldSkin = profile.getAsJsonObject("textures").get("slim").getAsBoolean();
 		String skinData = profile.getAsJsonObject("textures").getAsJsonObject("skin").get("data").getAsString();

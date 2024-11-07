@@ -11,11 +11,11 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonPrimitive;
 import dev.l3g7.griefer_utils.core.api.event_bus.EventListener;
 import dev.l3g7.griefer_utils.core.api.event_bus.EventRegisterer;
+import dev.l3g7.griefer_utils.core.settings.AbstractSetting;
 import dev.l3g7.griefer_utils.labymod.laby4.settings.Icons;
-import dev.l3g7.griefer_utils.labymod.laby4.temp.TempSettingActivityInitEvent;
 import dev.l3g7.griefer_utils.labymod.laby4.settings.Laby4Setting;
 import dev.l3g7.griefer_utils.labymod.laby4.settings.types.ButtonSettingImpl;
-import dev.l3g7.griefer_utils.core.settings.AbstractSetting;
+import dev.l3g7.griefer_utils.labymod.laby4.temp.TempSettingActivityInitEvent;
 import net.labymod.api.Laby;
 import net.labymod.api.client.component.Component;
 import net.labymod.api.client.gui.icon.Icon;
@@ -76,7 +76,7 @@ public class PlayerListSettingLaby4 extends ListSetting implements AbstractSetti
 
 		storage = new ExtendedStorage<>(list -> {
 			JsonArray array = new JsonArray();
-			list.forEach(e -> array.add(new JsonPrimitive(e.id)));
+			list.forEach(e -> array.add(new JsonPrimitive(e.getId())));
 			return array;
 		}, elem -> {
 			List<PlayerListEntry> list = new ArrayList<>();
