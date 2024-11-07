@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  */
 
-package dev.l3g7.griefer_utils.core.api.misc.server.types;
+package dev.l3g7.griefer_utils.core.api.misc;
 
 import com.google.gson.annotations.SerializedName;
 import dev.l3g7.griefer_utils.core.api.util.IOUtil;

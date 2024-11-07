@@ -13,7 +13,7 @@ import dev.l3g7.griefer_utils.core.api.event_bus.EventListener;
 import dev.l3g7.griefer_utils.core.api.event_bus.EventRegisterer;
 import dev.l3g7.griefer_utils.core.api.reflection.Reflection;
 import dev.l3g7.griefer_utils.core.events.GuiScreenEvent.GuiOpenEvent;
-import dev.l3g7.griefer_utils.core.events.WebDataReceiveEvent;
+import dev.l3g7.griefer_utils.core.events.StaticDataReceiveEvent;
 import dev.l3g7.griefer_utils.core.events.annotation_events.OnEnable;
 import dev.l3g7.griefer_utils.core.events.annotation_events.OnStartupComplete;
 import dev.l3g7.griefer_utils.features.Feature;
@@ -72,7 +72,7 @@ public class Main extends LabyModAddon {
 	}
 
 	@EventListener
-	private static void onWebData(WebDataReceiveEvent event) {
+	private static void onStaticData(StaticDataReceiveEvent event) {
 		addonDescription = event.data.addonDescription;
 		updateDescription();
 	}

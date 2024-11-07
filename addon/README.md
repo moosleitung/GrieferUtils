@@ -1,3 +1,3 @@
 ### Building
+- run `gradlew clean`
 - run `gradlew build`
-- run `gradlew run`

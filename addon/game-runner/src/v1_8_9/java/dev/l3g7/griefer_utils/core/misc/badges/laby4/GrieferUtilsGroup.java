@@ -7,12 +7,12 @@
 
 package dev.l3g7.griefer_utils.core.misc.badges.laby4;
 
-import dev.l3g7.griefer_utils.core.api.WebAPI;
+import dev.l3g7.griefer_utils.core.api.misc.server.requests.StaticApiRequest.StaticApiData.SpecialBadge;
 import dev.l3g7.griefer_utils.core.api.bridges.Bridge.ExclusiveTo;
+import dev.l3g7.griefer_utils.core.api.misc.server.GUServer;
 import dev.l3g7.griefer_utils.core.api.reflection.Reflection;
 import dev.l3g7.griefer_utils.core.misc.badges.Badges;
 import dev.l3g7.griefer_utils.core.misc.gui.elements.laby_polyfills.DrawUtils;
-import dev.l3g7.griefer_utils.core.misc.server.GUClient;
 import net.labymod.api.Laby;
 import net.labymod.api.LabyAPI;
 import net.labymod.api.Textures;
@@ -70,7 +70,7 @@ public class GrieferUtilsGroup extends Group {
 		this(null, 0xFFFFFF, 0xFFFFFF);
 	}
 
-	public GrieferUtilsGroup(WebAPI.Data.SpecialBadge badge) {
+	public GrieferUtilsGroup(SpecialBadge badge) {
 		this(badge.title, badge.colorWithoutLabymod, badge.colorWithLabymod);
 	}
 
@@ -149,7 +149,7 @@ public class GrieferUtilsGroup extends Group {
 				familiarCount++;
 
 		int percent = totalCount == 0 ? 0 : (int) Math.round(familiarCount / (double) totalCount * 100);
-		String text = GUClient.get().isAvailable() ? String.format("§7%d§8/§7%d §a%d%%", familiarCount, totalCount, percent) : "§c?";
+		String text = GUServer.isAvailable() ? String.format("§7%d§8/§7%d §a%d%%", familiarCount, totalCount, percent) : "§c?";
 		DrawUtils.drawRightString(text, x, 1.5, 0.7);
 
 		DrawUtils.bindTexture(new ResourceLocation("griefer_utils", "icons/icon.png"));

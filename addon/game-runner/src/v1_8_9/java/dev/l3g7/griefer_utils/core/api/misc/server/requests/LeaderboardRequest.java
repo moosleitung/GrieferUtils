@@ -8,20 +8,20 @@
 package dev.l3g7.griefer_utils.core.api.misc.server.requests;
 
 import dev.l3g7.griefer_utils.core.api.misc.server.Request;
-import dev.l3g7.griefer_utils.core.api.misc.server.Response;
-import dev.l3g7.griefer_utils.core.api.misc.server.types.GUSession;
+
+import static dev.l3g7.griefer_utils.core.api.misc.Constants.DYNAMIC_API_URL;
 
 public class LeaderboardRequest extends Request<LeaderboardRequest.LeaderboardData> {
 
 	private boolean flown;
 
 	public LeaderboardRequest(boolean flown) {
-		super("/leaderboard");
+		super(DYNAMIC_API_URL, "/leaderboard");
 		this.flown = flown;
 	}
 
 	@Override
-	protected LeaderboardData parseResponse(GUSession session, Response response) {
+	protected LeaderboardData parseResponse(Response response) {
 		return response.convertTo(LeaderboardData.class);
 	}
 

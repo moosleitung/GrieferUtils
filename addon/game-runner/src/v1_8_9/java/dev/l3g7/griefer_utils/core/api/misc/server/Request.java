@@ -7,11 +7,12 @@
 
 package dev.l3g7.griefer_utils.core.api.misc.server;
 
+import com.google.gson.annotations.SerializedName;
 import dev.l3g7.griefer_utils.core.api.BugReporter;
 import dev.l3g7.griefer_utils.core.api.misc.CustomSSLSocketFactoryProvider;
+import dev.l3g7.griefer_utils.core.api.misc.PlayerKeyPair;
 import dev.l3g7.griefer_utils.core.api.misc.ThreadFactory;
 import dev.l3g7.griefer_utils.core.api.misc.functions.Consumer;
-import dev.l3g7.griefer_utils.core.api.misc.server.types.GUSession;
 import dev.l3g7.griefer_utils.core.api.util.IOUtil;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -19,9 +20,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.security.Signature;
 import java.util.Arrays;
+import java.util.Base64;
+import java.util.Date;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -36,9 +42,10 @@ public abstract class Request<R> {
 	protected static final ScheduledExecutorService SCHEDULED_EXECUTOR = Executors.newScheduledThreadPool(
 		4, new ThreadFactory("grieferutils-server-conn-%d", MIN_PRIORITY));
 
-	public transient final String path;
+	public transient final String server, path;
 
-	public Request(String path) {
+	public Request(String server, String path) {
+		this.server = server;
 		this.path = path;
 	}
 
@@ -46,23 +53,23 @@ public abstract class Request<R> {
 		return IOUtil.gson.toJson(this);
 	}
 
-	protected abstract R parseResponse(GUSession session, Response response) throws Throwable;
+	protected abstract R parseResponse(Response response) throws Throwable;
 
-	public R send(GUSession session) {
-		return request(session, BugReporter::reportError, true);
+	public R send() {
+		return request(BugReporter::reportError, true);
 	}
 
-	public R get(GUSession session) {
-		return request(session, BugReporter::reportError, false);
+	public R get() {
+		return request(BugReporter::reportError, false);
 	}
 
 	// NOTE: handle errors at a higher level, the current solution is very confusing and prone to errors if anything changes
-	public R request(GUSession session, Consumer<IOException> errorHandler, boolean post) {
+	public R request(Consumer<IOException> errorHandler, boolean post) {
 		// Try 3 times
 		IOException[] exceptions = new IOException[3];
 		for (int attempt = 0; attempt < 3; attempt++) {
 			try {
-				return request(session, false, post);
+				return request(false, post);
 			} catch (IOException e) {
 				exceptions[attempt] = e;
 			}
@@ -71,21 +78,21 @@ public abstract class Request<R> {
 		// All tries failed, try again in 10 min
 		Arrays.stream(exceptions).forEach(Throwable::printStackTrace);
 		try {
-			return SCHEDULED_EXECUTOR.schedule(() -> request(session, errorHandler, post), 10, TimeUnit.MINUTES).get();
+			return SCHEDULED_EXECUTOR.schedule(() -> request(errorHandler, post), 10, TimeUnit.MINUTES).get();
 		} catch (ExecutionException | InterruptedException e) {
 			errorHandler.accept(new IOException(e));
 			return null;
 		}
 	}
 
-	protected R request(GUSession session, boolean sessionRenewed, boolean post) throws IOException {
-		HttpURLConnection conn = (HttpURLConnection) new URL(session.host + path).openConnection();
+	protected R request(boolean sessionRenewed, boolean post) throws IOException {
+		HttpURLConnection conn = (HttpURLConnection) new URL(server + path).openConnection();
 		if (conn instanceof HttpsURLConnection httpsConn)
 			httpsConn.setSSLSocketFactory(CustomSSLSocketFactoryProvider.getCustomFactory());
 
 		conn.setRequestProperty("Content-Type", "application/json");
-		if (session.sessionToken != null)
-			conn.setRequestProperty("Authorization", "Bearer " + session.sessionToken);
+		if (GUServer.isAvailable())
+			conn.setRequestProperty("Authorization", GUServer.generateAuthHeader());
 
 		if (post) {
 			conn.setRequestMethod("POST");
@@ -98,21 +105,72 @@ public abstract class Request<R> {
 			if (sessionRenewed)
 				return null;
 
-			try {
-				session.renewToken();
-				return request(session, true, post);
-			} catch (GeneralSecurityException e) {
-				throw new IOException(e);
-			}
+			GUServer.renewToken();
+			return request(true, post);
 		}
 
 		InputStream in = conn.getResponseCode() >= 400 ? conn.getErrorStream() : conn.getInputStream();
 		Response r = new Response(new String(IOUtil.toByteArray(in), StandardCharsets.UTF_8));
 
 		try {
-			return parseResponse(session, r);
+			return parseResponse(r);
 		} catch (Throwable e) {
 			throw new IOException(e);
+		}
+	}
+
+	public static class Response {
+
+		private final String body;
+
+		public Response(String body) {
+			this.body = body;
+		}
+
+		public <T> T convertTo(Class<T> type) {
+			return IOUtil.gson.fromJson(body, type);
+		}
+	}
+
+	@SuppressWarnings({"FieldCanBeLocal", "unused"}) // Class is serialized with gson
+	static class AuthData {
+
+		private final UUID user;
+
+		@SerializedName("request_time")
+		private final long requestTime;
+
+		private final String signature;
+
+		@SerializedName("public_key")
+		private final String publicKey;
+
+		@SerializedName("key_signature")
+		private final String keySignature;
+
+		@SerializedName("expiration_time")
+		private final long expirationTime;
+
+		AuthData(UUID user, PlayerKeyPair keyPair) throws GeneralSecurityException {
+			this.user = user;
+			this.requestTime = new Date().getTime();
+
+			// Create payload
+			ByteBuffer signedPayload = ByteBuffer.allocate(24);
+			signedPayload.putLong(user.getMostSignificantBits());
+			signedPayload.putLong(user.getLeastSignificantBits());
+			signedPayload.putLong(requestTime);
+
+			// Create signature
+			Signature sign = Signature.getInstance("SHA256withRSA");
+			sign.initSign(keyPair.getPrivateKey());
+			sign.update(signedPayload.array());
+			byte[] signature = sign.sign();
+
+			this.signature = Base64.getEncoder().encodeToString(signature);
+			this.publicKey = keyPair.getPublicKey();
+			this.keySignature = keyPair.getPublicKeySignature();
+			this.expirationTime = keyPair.getExpirationTime();
 		}
 	}
 

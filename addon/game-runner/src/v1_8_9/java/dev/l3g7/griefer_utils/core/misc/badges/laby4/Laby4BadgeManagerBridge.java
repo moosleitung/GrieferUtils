@@ -11,22 +11,23 @@ import dev.l3g7.griefer_utils.core.api.bridges.Bridge;
 import dev.l3g7.griefer_utils.core.api.bridges.Bridge.ExclusiveTo;
 import dev.l3g7.griefer_utils.core.api.event_bus.EventListener;
 import dev.l3g7.griefer_utils.core.api.file_provider.Singleton;
-import dev.l3g7.griefer_utils.core.api.misc.functions.Supplier;
+import dev.l3g7.griefer_utils.core.api.misc.server.GUServer;
 import dev.l3g7.griefer_utils.core.api.reflection.Reflection;
-import dev.l3g7.griefer_utils.core.events.WebDataReceiveEvent;
 import dev.l3g7.griefer_utils.core.events.TickEvent;
 import dev.l3g7.griefer_utils.core.events.UserSetGroupEvent;
-import dev.l3g7.griefer_utils.features.uncategorized.settings.credits.Credits;
+import dev.l3g7.griefer_utils.core.events.StaticDataReceiveEvent;
 import dev.l3g7.griefer_utils.core.misc.badges.BadgeManagerBridge;
-import dev.l3g7.griefer_utils.core.misc.server.GUClient;
+import dev.l3g7.griefer_utils.features.uncategorized.settings.credits.Credits;
 import io.netty.util.internal.ConcurrentSet;
 import net.labymod.api.Laby;
 import net.labymod.api.user.group.Group;
 import net.labymod.core.main.user.DefaultGameUser;
 import net.labymod.core.main.user.group.GroupHolder;
 
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static dev.l3g7.griefer_utils.core.api.bridges.Bridge.Version.LABY_4;
@@ -92,7 +93,7 @@ public class Laby4BadgeManagerBridge implements BadgeManagerBridge {
 	}
 
 	private static void requestQueuedUsers() {
-		if (queuedUsers.isEmpty() || !GUClient.get().isAvailable())
+		if (queuedUsers.isEmpty() || !GUServer.isAvailable())
 			return;
 
 		lastRequest = System.currentTimeMillis();
@@ -101,7 +102,7 @@ public class Laby4BadgeManagerBridge implements BadgeManagerBridge {
 		requestedUsers.addAll(queuedUsers);
 		queuedUsers.removeAll(requestedUsers);
 
-		CompletableFuture.supplyAsync((Supplier<List<UUID>>) () -> GUClient.get().getOnlineUsers(requestedUsers)).thenAccept(uuids -> {
+		GUServer.getOnlineUsers(requestedUsers).thenAccept(uuids -> {
 			for (UUID uuid : uuids) {
 				users.put(uuid, user(uuid).visibleGroup());
 				setGroup(user(uuid), specialBadges.getOrDefault(uuid, new GrieferUtilsGroup()));
@@ -110,7 +111,7 @@ public class Laby4BadgeManagerBridge implements BadgeManagerBridge {
 	}
 
 	@EventListener
-	private static void onWebData(WebDataReceiveEvent event) {
+	private static void onStaticData(StaticDataReceiveEvent event) {
 		event.data.specialBadges.forEach((k, v) -> specialBadges.put(k, new GrieferUtilsGroup(v)));
 
 		Credits.addTeam();

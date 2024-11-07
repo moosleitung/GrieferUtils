@@ -11,16 +11,15 @@ import dev.l3g7.griefer_utils.core.api.bridges.Bridge;
 import dev.l3g7.griefer_utils.core.api.bridges.Bridge.ExclusiveTo;
 import dev.l3g7.griefer_utils.core.api.event_bus.EventListener;
 import dev.l3g7.griefer_utils.core.api.file_provider.Singleton;
-import dev.l3g7.griefer_utils.core.api.misc.functions.Supplier;
-import dev.l3g7.griefer_utils.core.events.WebDataReceiveEvent;
-import dev.l3g7.griefer_utils.core.injection.InheritedInvoke;
+import dev.l3g7.griefer_utils.core.api.misc.server.GUServer;
 import dev.l3g7.griefer_utils.core.events.TickEvent;
 import dev.l3g7.griefer_utils.core.events.UserSetGroupEvent;
-import dev.l3g7.griefer_utils.features.uncategorized.settings.credits.Credits;
+import dev.l3g7.griefer_utils.core.events.StaticDataReceiveEvent;
+import dev.l3g7.griefer_utils.core.injection.InheritedInvoke;
 import dev.l3g7.griefer_utils.core.misc.badges.BadgeManagerBridge;
 import dev.l3g7.griefer_utils.core.misc.badges.Badges;
 import dev.l3g7.griefer_utils.core.misc.gui.elements.Gui;
-import dev.l3g7.griefer_utils.core.misc.server.GUClient;
+import dev.l3g7.griefer_utils.features.uncategorized.settings.credits.Credits;
 import io.netty.util.internal.ConcurrentSet;
 import net.labymod.core_implementation.mc18.gui.ModPlayerTabOverlay;
 import net.labymod.main.LabyMod;
@@ -38,8 +37,10 @@ import org.spongepowered.asm.mixin.injection.Slice;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static dev.l3g7.griefer_utils.core.api.bridges.Bridge.Version.LABY_3;
@@ -99,7 +100,7 @@ public class Laby3BadgeManagerBridge implements BadgeManagerBridge {
 	}
 
 	private static void requestQueuedUsers() {
-		if (queuedUsers.isEmpty() || !GUClient.get().isAvailable())
+		if (queuedUsers.isEmpty() || !GUServer.isAvailable())
 			return;
 
 		lastRequest = System.currentTimeMillis();
@@ -108,7 +109,7 @@ public class Laby3BadgeManagerBridge implements BadgeManagerBridge {
 		requestedUsers.addAll(queuedUsers);
 		queuedUsers.removeAll(requestedUsers);
 
-		CompletableFuture.supplyAsync((Supplier<List<UUID>>) () -> GUClient.get().getOnlineUsers(requestedUsers)).thenAccept(uuids -> {
+		GUServer.getOnlineUsers(requestedUsers).thenAccept(uuids -> {
 			for (UUID uuid : uuids) {
 				users.put(uuid, user(uuid).getGroup());
 				user(uuid).setGroup(specialBadges.getOrDefault(uuid, new GrieferUtilsGroup()));
@@ -117,7 +118,7 @@ public class Laby3BadgeManagerBridge implements BadgeManagerBridge {
 	}
 
 	@EventListener
-	private static void onWebData(WebDataReceiveEvent event) {
+	private static void onStaticData(StaticDataReceiveEvent event) {
 		event.data.specialBadges.forEach((k, v) -> specialBadges.put(k, new GrieferUtilsGroup(v)));
 		Credits.addTeam();
 	}
@@ -151,7 +152,7 @@ public class Laby3BadgeManagerBridge implements BadgeManagerBridge {
 				familiarCount++;
 
 		int percent = totalCount == 0 ? 0 : (int) Math.round(familiarCount / (double) totalCount * 100);
-		String text = GUClient.get().isAvailable() ? String.format("§7%d§8/§7%d §a%d%%", familiarCount, totalCount, percent) : "§c?";
+		String text = GUServer.isAvailable() ? String.format("§7%d§8/§7%d §a%d%%", familiarCount, totalCount, percent) : "§c?";
 		LabyMod.getInstance().getDrawUtils().drawRightString(text, x, 3, 0.7);
 
 		LabyMod.getInstance().getDrawUtils().bindTexture("griefer_utils/icons/icon.png");

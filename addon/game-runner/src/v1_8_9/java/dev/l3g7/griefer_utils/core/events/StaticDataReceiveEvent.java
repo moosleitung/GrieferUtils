@@ -7,17 +7,18 @@
 
 package dev.l3g7.griefer_utils.core.events;
 
-import dev.l3g7.griefer_utils.core.api.WebAPI;
+import dev.l3g7.griefer_utils.core.api.misc.server.requests.StaticApiRequest.StaticApiData;
 import dev.l3g7.griefer_utils.core.api.event_bus.Event;
+import dev.l3g7.griefer_utils.core.api.misc.server.GUServer;
 
 /**
- * Is fired when {@link WebAPI} receives data.
+ * Fired when {@link GUServer} loads the static API.
  */
-public class WebDataReceiveEvent extends Event {
+public class StaticDataReceiveEvent extends Event {
 
-	public final WebAPI.Data data;
+	public final StaticApiData data;
 
-	public WebDataReceiveEvent(WebAPI.Data data) {
+	public StaticDataReceiveEvent(StaticApiData data) {
 		this.data = data;
 	}
 

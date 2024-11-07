@@ -8,9 +8,9 @@
 package dev.l3g7.griefer_utils.features.uncategorized;
 
 import dev.l3g7.griefer_utils.core.api.event_bus.EventListener;
+import dev.l3g7.griefer_utils.core.api.misc.server.GUServer;
 import dev.l3g7.griefer_utils.core.api.reflection.Reflection;
 import dev.l3g7.griefer_utils.core.events.TickEvent.ClientTickEvent;
-import dev.l3g7.griefer_utils.core.misc.server.GUClient;
 import net.minecraft.client.gui.inventory.GuiChest;
 import net.minecraft.inventory.IInventory;
 
@@ -44,7 +44,7 @@ public class BlockOfTheDay {
 			return;
 
 		lastReportedBlock = currentDay;
-		new Thread(() -> GUClient.get().sendBlockOfTheDay(inventory.getStackInSlot(13))).start();
+		GUServer.sendBlockOfTheDay(inventory.getStackInSlot(13));
 	}
 
 }

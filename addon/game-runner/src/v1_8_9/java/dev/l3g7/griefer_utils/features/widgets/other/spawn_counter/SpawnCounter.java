@@ -17,12 +17,12 @@ import dev.l3g7.griefer_utils.core.api.misc.Named;
 import dev.l3g7.griefer_utils.core.api.misc.config.Config;
 import dev.l3g7.griefer_utils.core.api.misc.functions.Consumer;
 import dev.l3g7.griefer_utils.core.api.misc.functions.Supplier;
-import dev.l3g7.griefer_utils.core.api.misc.server.requests.LeaderboardRequest;
+import dev.l3g7.griefer_utils.core.api.misc.server.GUServer;
 import dev.l3g7.griefer_utils.core.api.misc.server.requests.LeaderboardRequest.LeaderboardData;
+import dev.l3g7.griefer_utils.core.api.misc.server.requests.LeaderboardRequest.UserData;
 import dev.l3g7.griefer_utils.core.events.network.ServerEvent;
 import dev.l3g7.griefer_utils.core.misc.ServerCheck;
 import dev.l3g7.griefer_utils.core.misc.gui.elements.laby_polyfills.DrawUtils;
-import dev.l3g7.griefer_utils.core.misc.server.GUClient;
 import dev.l3g7.griefer_utils.core.settings.player_list.PlayerListEntry;
 import dev.l3g7.griefer_utils.core.settings.types.DropDownSetting;
 import dev.l3g7.griefer_utils.core.settings.types.HeaderSetting;
@@ -50,6 +50,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static dev.l3g7.griefer_utils.core.api.bridges.Bridge.Version.LABY_3;
@@ -115,11 +116,11 @@ public class SpawnCounter extends Widget { // NOTE: cleanup
 
 	@EventListener
 	public void onGrieferGamesJoin(ServerEvent.GrieferGamesJoinEvent event) {
-		getLeaderboardHandler().request(() -> GUClient.get().getLeaderboardData());
+		getLeaderboardHandler().update(GUServer::getLeaderboardData);
 	}
 
 	public void onRoundComplete(boolean flown) {
-		getLeaderboardHandler().request(() -> GUClient.get().sendLeaderboardData(flown));
+		getLeaderboardHandler().update(() -> GUServer.sendLeaderboardData(flown));
 	}
 
 	@Override
@@ -194,9 +195,9 @@ public class SpawnCounter extends Widget { // NOTE: cleanup
 	}
 
 	protected static abstract class LeaderboardHandler {
-		public LeaderboardRequest.LeaderboardData data;
+		public LeaderboardData data;
 
-		public abstract void request(Supplier<LeaderboardRequest.LeaderboardData> request);
+		public abstract void update(Supplier<CompletableFuture<LeaderboardData>> supplier);
 	}
 
 	@ExclusiveTo(LABY_3)
@@ -315,12 +316,12 @@ public class SpawnCounter extends Widget { // NOTE: cleanup
 			public static int renderWidth;
 
 			@Override
-			public void request(Supplier<LeaderboardData> supplier) {
-				if (!GUClient.get().isAvailable() || leaderboard.get() == OFF)
+			public void update(Supplier<CompletableFuture<LeaderboardData>> supplier) {
+				if (!GUServer.isAvailable() || leaderboard.get() == OFF)
 					return;
 
-				new Thread(() -> {
-					data = supplier.get();
+				supplier.get().thenAccept(data -> {
+					LeaderboardHandlerL3.data = data;
 					if (data == null)
 						return;
 
@@ -329,7 +330,7 @@ public class SpawnCounter extends Widget { // NOTE: cleanup
 
 					if (data.previous != null && !ENTRIES.containsKey(data.previous.uuid))
 						ENTRIES.put(data.previous.uuid, new PlayerListEntry(null, data.previous.uuid));
-				}).start();
+				});
 			}
 
 			public static String getCompactText() {
@@ -399,7 +400,7 @@ public class SpawnCounter extends Widget { // NOTE: cleanup
 				return renderData;
 			}
 
-			private static PlayerListEntry getEntry(LeaderboardRequest.UserData data) {
+			private static PlayerListEntry getEntry(UserData data) {
 				if (data == null)
 					return INVALID_PLAYER;
 
@@ -490,12 +491,12 @@ public class SpawnCounter extends Widget { // NOTE: cleanup
 				EventRegisterer.register(this);
 			}
 
-			public void request(Supplier<LeaderboardRequest.LeaderboardData> request) {
-				if (!GUClient.get().isAvailable() || leaderboard.get() == OFF)
+			public void update(Supplier<CompletableFuture<LeaderboardData>> supplier) {
+				if (!GUServer.isAvailable() || leaderboard.get() == OFF)
 					return;
 
-				new Thread(() -> {
-					data = request.get();
+				supplier.get().thenAccept(data -> {
+					LeaderboardHandlerL4.this.data = data;
 					if (data == null)
 						return;
 
@@ -504,7 +505,7 @@ public class SpawnCounter extends Widget { // NOTE: cleanup
 
 					if (data.previous != null && !ENTRIES.containsKey(data.previous.uuid))
 						ENTRIES.put(data.previous.uuid, new PlayerListEntry(null, data.previous.uuid));
-				}).start();
+				});
 			}
 
 			public void createLines() {
@@ -531,7 +532,7 @@ public class SpawnCounter extends Widget { // NOTE: cleanup
 				}
 			}
 
-			private void tickOtherPlayerLine(LeaderboardRequest.UserData other, LeaderboardLine line) {
+			private void tickOtherPlayerLine(UserData other, LeaderboardLine line) {
 				line.setState(DISABLED);
 
 				if (other == null)

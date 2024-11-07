@@ -8,8 +8,8 @@
 package dev.l3g7.griefer_utils.core.api.misc.server.requests.hive_mind;
 
 import dev.l3g7.griefer_utils.core.api.misc.server.Request;
-import dev.l3g7.griefer_utils.core.api.misc.server.Response;
-import dev.l3g7.griefer_utils.core.api.misc.server.types.GUSession;
+
+import static dev.l3g7.griefer_utils.core.api.misc.Constants.HIVEMIND_URL;
 
 public class BlockOfTheDayRequest extends Request<Void> {
 
@@ -17,14 +17,14 @@ public class BlockOfTheDayRequest extends Request<Void> {
 	private final long timestamp;
 
 	public BlockOfTheDayRequest(String item, long timestamp) {
-		super("/hive_mind/block_of_the_day");
+		super(HIVEMIND_URL, "/hive_mind/block_of_the_day");
 
 		this.item = item;
 		this.timestamp = timestamp;
 	}
 
 	@Override
-	protected Void parseResponse(GUSession session, Response response) {
+	protected Void parseResponse(Response response) {
 		return null;
 	}
 

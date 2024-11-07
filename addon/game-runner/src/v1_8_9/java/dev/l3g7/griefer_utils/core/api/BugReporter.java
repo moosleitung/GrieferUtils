@@ -27,6 +27,7 @@ import java.util.Set;
 
 import static dev.l3g7.griefer_utils.core.api.bridges.Bridge.Version.LABY_4;
 import static dev.l3g7.griefer_utils.core.api.bridges.LabyBridge.labyBridge;
+import static dev.l3g7.griefer_utils.core.api.misc.Constants.DYNAMIC_API_URL;
 
 public class BugReporter {
 
@@ -102,7 +103,7 @@ public class BugReporter {
 
 			// Report bug
 			try {
-				HttpURLConnection conn = (HttpURLConnection) new URL("https://grieferutils.l3g7.dev/v6/bug_report").openConnection();
+				HttpURLConnection conn = (HttpURLConnection) new URL(DYNAMIC_API_URL + "/bugReport").openConnection();
 
 				if (conn instanceof HttpsURLConnection)
 					((HttpsURLConnection) conn).setSSLSocketFactory(CustomSSLSocketFactoryProvider.getCustomFactory());

@@ -7,7 +7,7 @@
 
 package dev.l3g7.griefer_utils.core.misc.badges.laby3;
 
-import dev.l3g7.griefer_utils.core.api.WebAPI;
+import dev.l3g7.griefer_utils.core.api.misc.server.requests.StaticApiRequest.StaticApiData.SpecialBadge;
 import dev.l3g7.griefer_utils.core.misc.badges.Badges;
 import net.labymod.main.LabyMod;
 import net.labymod.user.group.EnumGroupDisplayType;
@@ -31,7 +31,7 @@ public class GrieferUtilsGroup extends LabyGroup {
 		this(null, 0xFFFFFF, 0xFFFFFF);
 	}
 
-	public GrieferUtilsGroup(WebAPI.Data.SpecialBadge badge) {
+	public GrieferUtilsGroup(SpecialBadge badge) {
 		this(badge.title, badge.colorWithoutLabymod, badge.colorWithLabymod);
 	}
 

@@ -50,6 +50,7 @@ import java.util.regex.Pattern;
 
 import static dev.l3g7.griefer_utils.core.api.bridges.Bridge.Version.LABY_4;
 import static dev.l3g7.griefer_utils.core.api.bridges.LabyBridge.labyBridge;
+import static dev.l3g7.griefer_utils.core.api.misc.Constants.STATIC_API_URL;
 import static dev.l3g7.griefer_utils.core.api.reflection.Reflection.c;
 
 @Singleton
@@ -70,7 +71,7 @@ public class FilterWebhooks extends Feature {
 
 	public FilterWebhooks() {
 		EMBED_FOOTER.addProperty("text", Constants.ADDON_NAME + " v" + labyBridge.addonVersion());
-		EMBED_FOOTER.addProperty("icon_url", "https://api.grieferutils.l3g7.dev/icon/padded/64x64.png");
+		EMBED_FOOTER.addProperty("icon_url", STATIC_API_URL + "/icon/padded/64x64.png");
 	}
 
 	private static void saveWebhooks() {

@@ -14,7 +14,7 @@ import dev.l3g7.griefer_utils.core.api.file_provider.Singleton;
 import dev.l3g7.griefer_utils.core.api.misc.VersionComparator;
 import dev.l3g7.griefer_utils.core.api.misc.config.ConfigPatcher;
 import dev.l3g7.griefer_utils.core.auto_update.AutoUpdater;
-import dev.l3g7.griefer_utils.core.events.WebDataReceiveEvent;
+import dev.l3g7.griefer_utils.core.events.StaticDataReceiveEvent;
 import dev.l3g7.griefer_utils.core.settings.BaseSetting;
 import dev.l3g7.griefer_utils.core.settings.types.ButtonSetting;
 import dev.l3g7.griefer_utils.core.settings.types.CategorySetting;
@@ -42,7 +42,7 @@ public class Changelog {
 		.subSettings();
 
 	@EventListener
-	private void onWebData(WebDataReceiveEvent event) {
+	private void onStaticData(StaticDataReceiveEvent event) {
 		List<BaseSetting<?>> entries = new ArrayList<>();
 
 		if (Settings.releaseChannel.get() == BETA)

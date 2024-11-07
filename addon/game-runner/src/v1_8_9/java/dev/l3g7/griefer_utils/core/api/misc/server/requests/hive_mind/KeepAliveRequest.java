@@ -5,20 +5,20 @@
  * you may not use this file except in compliance with the License.
  */
 
-package dev.l3g7.griefer_utils.core.api.misc.server.requests;
+package dev.l3g7.griefer_utils.core.api.misc.server.requests.hive_mind;
 
 import dev.l3g7.griefer_utils.core.api.misc.server.Request;
-import dev.l3g7.griefer_utils.core.api.misc.server.Response;
-import dev.l3g7.griefer_utils.core.api.misc.server.types.GUSession;
+
+import static dev.l3g7.griefer_utils.core.api.misc.Constants.HIVEMIND_URL;
 
 public class KeepAliveRequest extends Request<Void> {
 
 	public KeepAliveRequest() {
-		super("/keep_alive");
+		super(HIVEMIND_URL, "/keep_alive");
 	}
 
 	@Override
-	protected Void parseResponse(GUSession session, Response response) {
+	protected Void parseResponse(Response response) {
 		return null;
 	}
 

@@ -8,8 +8,8 @@
 package dev.l3g7.griefer_utils.core.api.misc.server.requests.hive_mind;
 
 import dev.l3g7.griefer_utils.core.api.misc.server.Request;
-import dev.l3g7.griefer_utils.core.api.misc.server.Response;
-import dev.l3g7.griefer_utils.core.api.misc.server.types.GUSession;
+
+import static dev.l3g7.griefer_utils.core.api.misc.Constants.HIVEMIND_URL;
 
 public class MobRemoverRequest extends Request<Long> {
 
@@ -17,14 +17,14 @@ public class MobRemoverRequest extends Request<Long> {
 	private Long value;
 
 	public MobRemoverRequest(String citybuild, Long value) {
-		super("/hive_mind/mob_remover");
+		super(HIVEMIND_URL, "/hive_mind/mob_remover");
 
 		this.citybuild = citybuild;
 		this.value = value;
 	}
 
 	@Override
-	protected Long parseResponse(GUSession session, Response response) {
+	protected Long parseResponse(Response response) {
 		return response.convertTo(OnlineUsersResponse.class).value;
 	}
 

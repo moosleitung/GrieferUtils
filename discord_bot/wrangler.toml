@@ -1,7 +1,0 @@
-#:schema node_modules/wrangler/config-schema.json
-name = "discordbot"
-main = "index.js"
-compatibility_date = "2024-06-05"
-
-[placement]
-mode = "smart"
