@@ -17,14 +17,16 @@ import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 
-import java.util.Arrays;
-
 import static dev.l3g7.griefer_utils.core.util.MinecraftUtil.mc;
-import static net.minecraft.init.Blocks.*;
+import static net.minecraft.init.Blocks.hopper;
+import static net.minecraft.init.Blocks.redstone_wire;
 
 public abstract class RenderObject {
 
 	public static RenderObject fromState(BlockPos pos, IBlockState state) {
+		if (state == null)
+			return null;
+
 		Block block = state.getBlock();
 		if (block == redstone_wire)
 			return new RedstoneHelper.Wire(pos, state.getValue(BlockRedstoneWire.POWER));

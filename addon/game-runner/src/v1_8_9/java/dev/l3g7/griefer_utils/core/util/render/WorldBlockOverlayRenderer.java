@@ -113,7 +113,13 @@ public class WorldBlockOverlayRenderer {
 		ChunkCoordIntPair pair = new ChunkCoordIntPair(pos.getX() >> 4, pos.getZ() >> 4);
 
 		if (redstoneRenderObject != null) {
-			getRenderObjectsForChunk(pair).put(pos, RenderObject.fromState(state, pos, world()));
+			RenderObject ro = RenderObject.fromState(state, pos, world());
+			Map<BlockPos, RenderObject> map = getRenderObjectsForChunk(pair);
+
+			if (ro == null)
+				map.remove(pos);
+			else
+				map.put(pos, ro);
 			return;
 		}
 
