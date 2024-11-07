@@ -102,8 +102,7 @@ public class ItemSaver extends ItemSaverCategory.ItemSaver implements TempItemSa
 		if (!displayIcon.get() || !getProtection(event.stack).isProtected())
 			return;
 
-		float zLevel = DrawUtils.zLevel;
-		zLevel += 500;
+		float zLevel = 299.9f;
 
 		GlStateManager.pushMatrix();
 		GlStateManager.disableLighting();
