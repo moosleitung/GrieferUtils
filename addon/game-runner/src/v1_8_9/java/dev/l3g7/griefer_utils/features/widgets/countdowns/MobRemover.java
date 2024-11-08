@@ -10,13 +10,12 @@ package dev.l3g7.griefer_utils.features.widgets.countdowns;
 import dev.l3g7.griefer_utils.core.api.event_bus.EventListener;
 import dev.l3g7.griefer_utils.core.api.file_provider.Singleton;
 import dev.l3g7.griefer_utils.core.api.misc.Named;
-import dev.l3g7.griefer_utils.core.api.misc.functions.Supplier;
+import dev.l3g7.griefer_utils.core.api.misc.server.GUServer;
 import dev.l3g7.griefer_utils.core.api.util.Util;
 import dev.l3g7.griefer_utils.core.events.MessageEvent.MessageReceiveEvent;
 import dev.l3g7.griefer_utils.core.events.griefergames.CitybuildJoinEvent;
 import dev.l3g7.griefer_utils.core.events.network.ServerEvent.ServerSwitchEvent;
 import dev.l3g7.griefer_utils.core.misc.TPSCountdown;
-import dev.l3g7.griefer_utils.core.misc.server.GUClient;
 import dev.l3g7.griefer_utils.core.settings.types.DropDownSetting;
 import dev.l3g7.griefer_utils.core.settings.types.NumberSetting;
 import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
@@ -24,7 +23,6 @@ import dev.l3g7.griefer_utils.core.util.MinecraftUtil;
 import dev.l3g7.griefer_utils.features.Feature.MainElement;
 import dev.l3g7.griefer_utils.features.widgets.Widget.SimpleWidget;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -78,20 +76,18 @@ public class MobRemover extends SimpleWidget {
 		else
 			return;
 
-		if (GUClient.get().isAvailable()) {
-			new Thread(() -> {
-				long passedSeconds = System.currentTimeMillis() / 1000;
-				GUClient.get().sendMobRemoverData(MinecraftUtil.getCurrentCitybuild(), countdown.secondsRemaining() + passedSeconds);
-			}).start();
+		if (GUServer.isAvailable()) {
+			long passedSeconds = System.currentTimeMillis() / 1000;
+			GUServer.sendMobRemoverData(MinecraftUtil.getCurrentCitybuild(), countdown.secondsRemaining() + passedSeconds);
 		}
 	}
 
 	@EventListener(triggerWhenDisabled = true)
 	private void onCitybuildEarlyJoin(CitybuildJoinEvent.Early event) {
-		if (!GUClient.get().isAvailable())
+		if (!GUServer.isAvailable())
 			return;
 
-		CompletableFuture.supplyAsync((Supplier<Long>) () -> GUClient.get().getMobRemoverData(event.citybuild)).thenAccept(end -> {
+		GUServer.getMobRemoverData(event.citybuild).thenAccept(end -> {
 			if (end != null)
 				countdown = TPSCountdown.replaceFromEnd(countdown, end);
 		});

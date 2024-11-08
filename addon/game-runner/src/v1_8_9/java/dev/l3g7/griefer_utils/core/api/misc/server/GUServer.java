@@ -70,6 +70,8 @@ public class GUServer {
 	private void onAccountSwitch(AccountSwitchEvent event) {
 		if (isAvailable())
 			new LogoutRequest().send();
+
+		renewToken();
 	}
 
 	static void renewToken() {
@@ -83,7 +85,7 @@ public class GUServer {
 		UUID uuid = UUIDTypeAdapter.fromString(mc().getSession().getPlayerID());
 
 		try {
-			return "v2 " + IOUtil.gson.toJson(new Request.AuthData(uuid, currentKeyPair));
+			return "v2 " + IOUtil.gson.toJson(new Request.AuthData(uuid, currentKeyPair)).replaceAll("[\r\n]", "");
 		} catch (GeneralSecurityException t) {
 			return null; // generateAuthHeader is not called on invalid sessions, this exception will never happen
 		}
