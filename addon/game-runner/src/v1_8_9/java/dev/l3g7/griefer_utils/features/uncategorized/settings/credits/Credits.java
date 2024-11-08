@@ -40,8 +40,9 @@ public class Credits {
 			creditsBridge.createIconSetting("CobbleShop", "cobbleshop"),
 			creditsBridge.createIconSetting("Pleezon", "pleezon"),
 			creditsBridge.createIconSetting("Frreiheit", "frreiheit"),
-			creditsBridge.createIconSetting("Griefer.Info", "griefer_info"),
 			creditsBridge.createIconSetting("verbvllert_", "verbvllert_"),
+			creditsBridge.createIconSetting("Griefer.Info", "griefer_info"),
+			creditsBridge.createIconSetting("CommunityRadar", "community_radar"),
 			HeaderSetting.create().entryHeight(11),
 
 			HeaderSetting.create("Bild-Credits"),

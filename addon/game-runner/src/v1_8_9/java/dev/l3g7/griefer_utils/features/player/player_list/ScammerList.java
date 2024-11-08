@@ -9,13 +9,13 @@ package dev.l3g7.griefer_utils.features.player.player_list;
 
 import dev.l3g7.griefer_utils.core.api.file_provider.Singleton;
 
-import static net.minecraft.util.EnumChatFormatting.GREEN;
+import static net.minecraft.util.EnumChatFormatting.RED;
 
 @Singleton
-public class TrustedList extends PlayerList {
+public class ScammerList extends PlayerList {
 
-	public TrustedList() {
-		super("Trusted MM-Liste", "Markiert Spieler in verbvllert_s Trusted-MM-Liste.", "✰", "green_scroll", "Eigene Trusted", GREEN, 5, "§a§lTrusted", "https://data.community-radar.de/versions/v2/trusted.json");
+	public ScammerList() {
+		super("§zScammerliste", "Markiert Spieler in der Scammerliste des CommunityRadars.", "⚠", "red_scroll", "Eigene Scammer", RED, 14, "§c§lScammer", "https://data.community-radar.de/versions/v2/scammer.json");
 	}
 
 }
