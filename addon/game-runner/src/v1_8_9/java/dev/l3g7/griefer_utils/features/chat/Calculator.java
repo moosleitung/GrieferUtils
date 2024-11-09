@@ -100,11 +100,11 @@ public class Calculator extends Feature {
 		.subSettings(decimalPlaces, HeaderSetting.create(),
 			autoWithdraw, starPlaceholder, placeholder, autoEquationDetect, prefix);
 
-	private static final Pattern SIMPLE_EQUATION_PATTERN = Pattern.compile("(?:^|(?: |^)[^/\\n][^ \\r\\n]* )(?<equation>[+-]?\\d+(?:[.,]\\d+)?[mk]?(?: *\\* *[+-]?\\d+(?:[.,]\\d+)?[mk]?)*)", CASE_INSENSITIVE);
+	private static final Pattern SIMPLE_EQUATION_PATTERN = Pattern.compile("(?:^|(?: |^)[^/\\n][^ \\r\\n]* )(?<match>(?<equation>[+-]?\\d+(?:[.,]\\d+)?[mk]?(?: *\\* *[+-]?\\d+(?:[.,]\\d+)?[mk]?)*))", CASE_INSENSITIVE);
 	private static final Pattern PAYMENT_COMMAND_PATTERN = Pattern.compile(String.format("/pay %s (?<amount>.+)", Constants.UNFORMATTED_PLAYER_NAME_PATTERN), CASE_INSENSITIVE);
 	private static final BigDecimal THOUSAND = new BigDecimal(1000);
 
-	private static Pattern placeholderPattern = Pattern.compile("(?<!\\\\)\\{(?<equation>[^}]*[^\\\\])}");
+	private static Pattern placeholderPattern = Pattern.compile("(?<!\\\\)(?<match>\\{(?<equation>[^}]*[^\\\\])})");
 	private static String escapedPlaceholderPattern = "\\\\([{}])";
 	private BigDecimal lastPayment = BigDecimal.ZERO;
 	private String lastPaymentReceiver;
@@ -292,30 +292,27 @@ public class Calculator extends Feature {
 		String msg = event.message;
 		Matcher matcher = pattern.matcher(msg);
 		if (matcher.find()) {
-			do {
-				String equation = matcher.group("equation");
+			String equation = matcher.group("equation");
 
-				// Check if equation is empty
-				if (equation.isEmpty()) {
-					display(Constants.ADDON_PREFIX + "§r§4⚠ §cLeere Gleichung! §4⚠§r");
-					return true;
-				}
+			// Check if equation is empty
+			if (equation.isEmpty()) {
+				display(Constants.ADDON_PREFIX + "§r§4⚠ §cLeere Gleichung! §4⚠§r");
+				return true;
+			}
 
-				// Don't calculate if equation is "24/7"
-				if (equation.equals("24/7")
-					&& !(event.message.startsWith("/pay ") || event.message.startsWith("/bank ")) // Calculate 24/7 in /pay and /bank
-					&& pattern != placeholderPattern) { // Calculate 24/7 if specified in placeholder
-					return false;
-				}
+			// Don't calculate if equation is "24/7"
+			if (equation.equals("24/7")
+				&& !(event.message.startsWith("/pay ") || event.message.startsWith("/bank ")) // Calculate 24/7 in /pay and /bank
+				&& pattern != placeholderPattern) { // Calculate 24/7 if specified in placeholder
+				return false;
+			}
 
-				double expResult = calculate(equation, true);
-				if (Double.isNaN(expResult))
-					return true;
+			double expResult = calculate(equation, true);
+			if (Double.isNaN(expResult))
+				return true;
 
-				// Replace value
-				msg = msg.substring(0, matcher.start("equation")) + Constants.DECIMAL_FORMAT_98.format(new BigDecimal(expResult).setScale(Math.min(Math.max(decimalPlaces.get(), 0), 98), RoundingMode.HALF_UP)) + msg.substring(matcher.end("equation"));
-				matcher = pattern.matcher(msg);
-			} while (matcher.find());
+			// Replace value
+			msg = msg.substring(0, matcher.start("equation")) + Constants.DECIMAL_FORMAT_98.format(new BigDecimal(expResult).setScale(Math.min(Math.max(decimalPlaces.get(), 0), 98), RoundingMode.HALF_UP)) + msg.substring(matcher.end("equation"));
 
 			// Fix symbols
 			if (msg.toLowerCase().startsWith("/pay") || msg.toLowerCase().startsWith("/bank"))
