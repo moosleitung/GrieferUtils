@@ -44,6 +44,27 @@ public abstract class PacketEvent<P extends Packet<?>> extends Event {
 
 	}
 
+	/**
+	 * Fired after a packet was processed.
+	 */
+	public static class PacketReceivedEvent<P extends Packet<?>> extends PacketEvent<P> {
+
+		public PacketReceivedEvent(P packet) {
+			super(packet);
+		}
+
+		@Mixin(NetworkManager.class)
+		private static class MixinNetworkManager {
+
+			@Inject(method = "channelRead0(Lio/netty/channel/ChannelHandlerContext;Lnet/minecraft/network/Packet;)V", at = @At("TAIL"))
+			public void injectChannelRead0(ChannelHandlerContext ctx, Packet<?> packet, CallbackInfo ci) {
+				new PacketReceivedEvent<>(packet).fire();
+			}
+
+		}
+
+	}
+
 	public static class PacketSendEvent<P extends Packet<?>> extends PacketEvent<P> {
 
 		public PacketSendEvent(P packet) {

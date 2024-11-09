@@ -12,6 +12,7 @@ import dev.l3g7.griefer_utils.core.api.event_bus.EventListener;
 import dev.l3g7.griefer_utils.core.api.misc.functions.Supplier;
 import dev.l3g7.griefer_utils.core.events.WindowClickEvent;
 import dev.l3g7.griefer_utils.core.events.network.PacketEvent.PacketReceiveEvent;
+import dev.l3g7.griefer_utils.core.events.network.PacketEvent.PacketReceivedEvent;
 import dev.l3g7.griefer_utils.core.events.network.PacketEvent.PacketSendEvent;
 import dev.l3g7.griefer_utils.core.misc.ServerCheck;
 import dev.l3g7.griefer_utils.core.misc.TickScheduler;
@@ -19,8 +20,10 @@ import dev.l3g7.griefer_utils.features.item.recraft.Recraft;
 import dev.l3g7.griefer_utils.features.item.recraft.RecraftAction;
 import dev.l3g7.griefer_utils.features.item.recraft.RecraftRecording;
 import dev.l3g7.griefer_utils.features.uncategorized.debug.RecraftLogger;
+import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.client.C0DPacketCloseWindow;
 import net.minecraft.network.play.server.S2DPacketOpenWindow;
+import net.minecraft.network.play.server.S30PacketWindowItems;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -28,6 +31,7 @@ import java.util.Queue;
 import static dev.l3g7.griefer_utils.core.api.bridges.LabyBridge.labyBridge;
 import static dev.l3g7.griefer_utils.core.api.misc.Constants.ADDON_PREFIX;
 import static dev.l3g7.griefer_utils.core.util.MinecraftUtil.*;
+import static dev.l3g7.griefer_utils.features.item.recraft.recipe.ActionExecutor.FINISHED_EXECUTOR;
 
 /**
  * @author Pleezon, L3g73
@@ -35,9 +39,11 @@ import static dev.l3g7.griefer_utils.core.util.MinecraftUtil.*;
 public class RecipePlayer {
 
 	private static Queue<RecipeAction> pendingActions;
-	private static boolean closeGui = false;
-	private static RecipeAction actionBeingExecuted = null;
 	private static Supplier<Boolean> onFinish;
+
+	private static ActionExecutor currentExecutor = FINISHED_EXECUTOR;
+	private static int currentWindowId;
+	private static PacketReceiveEvent<S2DPacketOpenWindow> lastReceiveEvent;
 
 	public static void play(RecraftRecording recording) {
 		play(recording, recording::playSuccessor);
@@ -62,7 +68,8 @@ public class RecipePlayer {
 		for (RecraftAction action : recording.actions())
 			pendingActions.add((RecipeAction) action);
 
-		RecraftLogger.log("Started recipe as" + (Recraft.playingSuccessor ? "successor" : "origin"));
+		RecraftLogger.log("Started recipe as " + (Recraft.playingSuccessor ? "successor" : "origin"));
+		currentExecutor = FINISHED_EXECUTOR;
 
 		if (Recraft.playingSuccessor)
 			send("/rezepte");
@@ -75,99 +82,104 @@ public class RecipePlayer {
 	}
 
 	@EventListener
-	private static void onPacketReceive(PacketReceiveEvent<S2DPacketOpenWindow> event) {
-		if (!("minecraft:container".equals(event.packet.getGuiId())))
+	private static void onPacketReceived(PacketReceivedEvent<S30PacketWindowItems> event) {
+		if (currentWindowId != event.packet.func_148911_c())
 			return;
 
-		actionBeingExecuted = null;
-		if (closeGui) {
-			RecraftLogger.log("Closing window");
-			event.cancel();
-			closeGui = false;
-			TickScheduler.runAfterClientTicks(() -> {
-				if (onFinish.get()) {
-					mc().getNetHandler().addToSendQueue(new C0DPacketCloseWindow(event.packet.getWindowId()));
-					mc().addScheduledTask(player()::closeScreenAndDropStack);
-				}
-			}, 1);
+		if (pendingActions == null || pendingActions.isEmpty() || lastReceiveEvent == null)
 			return;
+
+		while (!pendingActions.isEmpty()) {
+			RecipeAction nextAction = pendingActions.poll();
+			ItemStack[] stacks = new ItemStack[36];
+			System.arraycopy(event.packet.getItemStacks(), event.packet.getItemStacks().length - 36, stacks, 0, 36);
+
+			if (nextAction.isAvailable(stacks, true)) {
+				currentExecutor = new ActionExecutor(currentExecutor, nextAction);
+				break;
+			}
+
+			if (nextAction.isAvailable(stacks, false)) {
+				RecraftLogger.log("Skipping action (ItemSaver)");
+				labyBridge.notify("§cAktion blockiert \u26A0", "§cDer Spezifische Item-Saver hat diese Aktion blockiert!");
+			} else {
+				RecraftLogger.log("Skipping action");
+				labyBridge.notify("§eAktion übersprungen \u26A0", "§eDu hattest nicht genügend Zutaten im Inventar!");
+			}
 		}
+
+		onPacketReceive(lastReceiveEvent);
+	}
+
+	@EventListener
+	private static void onPacketReceive(PacketReceiveEvent<S2DPacketOpenWindow> event) {
+		if (!"minecraft:container".equals(event.packet.getGuiId()))
+			return;
 
 		if (pendingActions == null)
 			return;
 
-		RecraftLogger.log("Recevied OpenWindow: " + pendingActions.size());
+		currentWindowId = event.packet.getWindowId();
+		RecraftLogger.log("Received WindowItems: " + pendingActions.size() + " | " + currentWindowId);
 
-		if (pendingActions.isEmpty()) {
-			closeGui = true;
-			pendingActions = null;
-			return;
-		}
-
-		TickScheduler.runAfterRenderTicks(() -> {
-			if (!pendingActions.isEmpty())
-				executeAction(pendingActions.poll(), event.packet.getWindowId(), false);
-
-			if (pendingActions != null && pendingActions.isEmpty())
-				closeGui = true;
-		}, 1);
-	}
-
-	private static void executeAction(RecipeAction action, int windowId, boolean hasSucceeded) {
-		actionBeingExecuted = action;
-		ActionResult result = action.execute(windowId, hasSucceeded);
-		RecraftLogger.log("Executing action " + action + " has returned " + result);
-		if (repeatAction(result, windowId, hasSucceeded))
-			return;
-
-		TickScheduler.runAfterClientTicks(() -> {
-			if (actionBeingExecuted == action) {
-				// Action failed, try again
-				executeAction(action, windowId, true);
+		if (currentExecutor.isFinished()) {
+			lastReceiveEvent = null;
+			if (!pendingActions.isEmpty()) {
+				lastReceiveEvent = event;
+				return; // Next action will be triggered after a WindowItems packet
 			}
-		}, 2);
+
+			RecraftLogger.log("Closing window");
+			pendingActions = null;
+			TickScheduler.runAfterClientTicks(() -> {
+				if (onFinish.get()) {
+					mc().getNetHandler().addToSendQueue(new C0DPacketCloseWindow(currentWindowId));
+					mc().addScheduledTask(player()::closeScreenAndDropStack);
+				}
+			}, 1);
+			return;
+		} else if (lastReceiveEvent == null) {
+			if (!currentExecutor.onNewWindow()) {
+				onPacketReceive(event);
+				return;
+			}
+		}
+
+		lastReceiveEvent = null;
+		TickScheduler.runAfterClientTicks(() -> {
+			if (currentWindowId == event.packet.getWindowId())
+				executeAction(event.packet.getWindowId());
+		}, 1);
 	}
 
-	private static boolean repeatAction(ActionResult result, int windowId, boolean hasSucceeded) {
-		if (result == ActionResult.SUCCESS)
-			return false;
+	private static void executeAction(int windowId) {
+		currentExecutor.execute(windowId);
 
-		if (result == ActionResult.FAIL) {
-			TickScheduler.runAfterClientTicks(player()::closeScreen, 1);
-			pendingActions = null;
-		}
-
-		if (pendingActions == null || hasSucceeded)
-			return true;
-
-		if (!pendingActions.isEmpty()) {
-			executeAction(pendingActions.poll(), windowId, false);
-			return true;
-		}
-
-		pendingActions = null;
 		TickScheduler.runAfterClientTicks(() -> {
-			player().closeScreen();
-			onFinish.get();
-		}, 1);
-		return true;
+			if (currentWindowId == windowId) {
+				// Action failed, try again
+				executeAction(windowId);
+			}
+		}, 10);
 	}
 
 	@EventListener
 	private static void onCloseWindow(PacketSendEvent<C0DPacketCloseWindow> event) {
 		if (pendingActions != null) {
-			RecraftLogger.log("Received close Window");
+			RecraftLogger.log("Sending close Window");
 			pendingActions = null;
+			currentWindowId = -1;
 		}
 	}
 
 	@EventListener
 	private static void onWindowClick(WindowClickEvent event) {
-		if (pendingActions == null || actionBeingExecuted != null)
+		if (pendingActions == null)
 			return;
 
 		LabyBridge.display(ADDON_PREFIX + "§cDas Abspielen wurde aufgrund einer manuellen Aktion abgebrochen.");
 		pendingActions = null;
+		currentWindowId = -1;
 	}
 
 }

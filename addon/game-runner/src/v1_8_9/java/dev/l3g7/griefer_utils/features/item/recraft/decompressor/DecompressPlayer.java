@@ -7,7 +7,9 @@
 
 package dev.l3g7.griefer_utils.features.item.recraft.decompressor;
 
+import dev.l3g7.griefer_utils.core.api.file_provider.FileProvider;
 import dev.l3g7.griefer_utils.core.misc.ServerCheck;
+import dev.l3g7.griefer_utils.features.item.item_saver.specific_item_saver.TempItemSaverBridge;
 import dev.l3g7.griefer_utils.features.item.recraft.RecraftAction.Ingredient;
 import dev.l3g7.griefer_utils.features.item.recraft.RecraftRecording;
 import dev.l3g7.griefer_utils.features.item.recraft.crafter.CraftAction;
@@ -54,10 +56,15 @@ public class DecompressPlayer {
 			if (stack == null)
 				freeSlots++;
 
-		int slot = getSlotWithLowestCompression(ingredient, freeSlots);
+		int slot = getSlotWithLowestCompression(ingredient, freeSlots, true);
 		if (slot < 0) {
+			if (getSlotWithLowestCompression(ingredient, freeSlots, false) >= 0) {
+				labyBridge.notify("§cFehler \u26A0", "§cDer Spezifische Item-Saver hat diese Aktion blockiert!");
+				return true;
+			}
+
 			if (slot == -1)
-				labyBridge.notify("§e§lFehler \u26A0", "Du hast nicht genügend Platz im Inventar!");
+				labyBridge.notify("§e§lFehler \u26A0", "§cDu hast nicht genügend Platz im Inventar!");
 
 			recording.playSuccessor();
 			return true;
@@ -77,7 +84,7 @@ public class DecompressPlayer {
 		return CraftPlayer.play(craftRecording, () -> craft(ingredient), false, true);
 	}
 
-	private static int getSlotWithLowestCompression(Ingredient ingredient, int freeSlots) {
+	private static int getSlotWithLowestCompression(Ingredient ingredient, int freeSlots, boolean checkForItemSaver) {
 		int compression = 8;
 		int slot = -1;
 		int placeChecksFailed = 0;
@@ -92,6 +99,9 @@ public class DecompressPlayer {
 				continue;
 
 			if (slotIngredient.compression == 0)
+				continue;
+
+			if (checkForItemSaver && FileProvider.getBridge(TempItemSaverBridge.class).isProtected(inv[i]))
 				continue;
 
 			if (getAdditionalRequiredSlots(slotIngredient.compression, inv[i].stackSize) > freeSlots) {
@@ -130,7 +140,7 @@ public class DecompressPlayer {
 		}
 
 		@Override
-		public int getSlot(int[] excludedSlots) {
+		public int getSlot(int[] excludedSlots, boolean checkForItemSaver) {
 			return slot;
 		}
 

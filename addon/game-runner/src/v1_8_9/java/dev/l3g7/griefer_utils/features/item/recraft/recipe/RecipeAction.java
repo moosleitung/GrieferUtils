@@ -13,80 +13,42 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import dev.l3g7.griefer_utils.features.item.recraft.RecraftAction;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.play.client.C0EPacketClickWindow;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static dev.l3g7.griefer_utils.core.api.bridges.LabyBridge.labyBridge;
-import static dev.l3g7.griefer_utils.core.util.MinecraftUtil.mc;
-import static dev.l3g7.griefer_utils.core.util.MinecraftUtil.player;
-import static dev.l3g7.griefer_utils.features.item.recraft.recipe.ActionResult.*;
 
 public class RecipeAction extends RecraftAction {
 
-	private final int slot;
-	private final Ingredient ingredient;
-	private final List<SizedIngredient> craftingIngredients;
+	public int category;
+	public int page;
+	public int slot;
+	public int variant;
+	public Ingredient result;
+	public List<SizedIngredient> craftingIngredients;
+	public int craftSlot;
 
-	public RecipeAction(int slot, List<SizedIngredient> craftingIngredients) {
+	RecipeAction() {
+		this(-1, 0, -1, 1, null, null, -1);
+	}
+
+	RecipeAction(int category, int page, int slot, int variant, Ingredient result, List<SizedIngredient> craftingIngredients, int craftSlot) {
+		this.category = category;
+		this.page = page;
 		this.slot = slot;
+		this.variant = variant;
+		this.result = result;
 		this.craftingIngredients = craftingIngredients;
-		this.ingredient = null;
-	}
-
-	public RecipeAction(Ingredient ingredient) {
-		this.ingredient = ingredient;
-		this.slot = -1;
-		this.craftingIngredients = null;
-	}
-
-	public ActionResult execute(int windowId, boolean hasSucceeded) {
-		if (ingredient != null) {
-			int ingredientSlot = ingredient.getSlot();
-			if (ingredientSlot == -1) {
-				if (hasSucceeded)
-					return SKIPPED;
-
-				labyBridge.notify("§c§lFehler \u26A0", "Ein benötigtes Item ist nicht verfügbar!");
-				return FAIL;
-			}
-
-			click(windowId, ingredientSlot);
-			return SUCCESS;
-		}
-
-		if (craftingIngredients != null) {
-			for (SizedIngredient craftingIngredient : craftingIngredients) {
-				if (!craftingIngredient.isAvailable()) {
-					if (!hasSucceeded)
-						labyBridge.notify("§eAktion übersprungen \u26A0", "Du hattest nicht genügend Zutaten im Inventar!");
-
-					return SKIPPED;
-				}
-			}
-		}
-
-		click(windowId, slot);
-		return SUCCESS;
-	}
-
-	private static void click(int windowId, int slot) {
-		mc().getNetHandler().addToSendQueue(new C0EPacketClickWindow(windowId, Math.abs(slot), 0, slot < 0 ? 1 : 0, null, (short) 0));
+		this.craftSlot = craftSlot;
 	}
 
 	public JsonElement toJson() {
-		if (ingredient != null)
-			return new JsonPrimitive(ingredient.toLong());
-
-		if (craftingIngredients == null)
-			return new JsonPrimitive(slot);
-
 		JsonObject object = new JsonObject();
+		object.addProperty("category", category);
+		object.addProperty("page", page);
 		object.addProperty("slot", slot);
+		object.addProperty("variant", variant);
+		object.addProperty("craftSlot", craftSlot);
+		object.addProperty("result", result.toLong());
 		JsonArray craftingJson = new JsonArray();
 
 		for (SizedIngredient craftingIngredient : craftingIngredients)
@@ -97,94 +59,46 @@ public class RecipeAction extends RecraftAction {
 	}
 
 	public static RecipeAction fromJson(JsonElement element) {
-		if (element.isJsonPrimitive()) {
-			long value = element.getAsLong();
-			if (value < 0xFFFF)
-				return new RecipeAction((int) value, null);
-
-			return new RecipeAction(Ingredient.fromLong(value));
-		}
+		if (element.isJsonPrimitive())
+			return null;
 
 		JsonObject object = element.getAsJsonObject();
-		if (!object.has("crafting_ingredients")) // Ensure backwards compatibility
-			return new RecipeAction(new Ingredient(object.get("id").getAsInt(), object.get("meta").getAsInt(), object.get("compression").getAsInt()));
+		if (!object.has("page"))
+			return null;
 
+		int category = object.get("category").getAsInt();
+		int page = object.get("page").getAsInt();
 		int slot = object.get("slot").getAsInt();
-
-		JsonArray craftingJson = object.getAsJsonArray("crafting_ingredients");
-		if (craftingJson == null)
-			return new RecipeAction(slot, null);
+		int typeIndex = object.get("variant").getAsInt();
+		int craftSlot = object.get("craftSlot").getAsInt();
+		Ingredient shortcut = Ingredient.fromLong(object.get("result").getAsLong());
 
 		List<SizedIngredient> ingredients = new ArrayList<>();
-		for (JsonElement jsonElement : craftingJson)
+		for (JsonElement jsonElement : object.getAsJsonArray("crafting_ingredients"))
 			ingredients.add(SizedIngredient.fromLong(jsonElement.getAsLong()));
 
-		return new RecipeAction(slot, ingredients);
+		return new RecipeAction(category, page, slot, typeIndex, shortcut, ingredients, craftSlot);
+	}
+
+	public RecipeAction copy() {
+		return new RecipeAction(category, page, slot, variant, result, craftingIngredients, craftSlot);
+	}
+
+	public boolean isAvailable(ItemStack[] stacks, boolean checkForItemSaver) {
+		return craftingIngredients.stream().allMatch(s -> s.isAvailable(stacks, checkForItemSaver));
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		RecipeAction that = (RecipeAction) o;
+		return category == that.category && page == that.page && slot == that.slot && variant == that.variant;
 	}
 
 	@Override
 	public String toString() {
-		if (ingredient != null)
-			return ingredient.toString();
-
-		return slot + " " + craftingIngredients;
-	}
-
-	static class SizedIngredient {
-
-		private final Ingredient ingredient;
-		private final int size;
-
-		static List<SizedIngredient> fromIngredients(Ingredient[] ingredients) {
-			if (ingredients == null)
-				return null;
-
-			Map<Ingredient, AtomicInteger> ingredientCounts = new HashMap<>();
-			for (Ingredient ingredient : ingredients)
-				if (ingredient != null)
-					ingredientCounts.computeIfAbsent(ingredient, k -> new AtomicInteger(0)).incrementAndGet();
-
-			List<SizedIngredient> sizedIngredients = new ArrayList<>();
-			for (Map.Entry<Ingredient, AtomicInteger> entry : ingredientCounts.entrySet())
-				sizedIngredients.add(new SizedIngredient(entry.getKey(), entry.getValue().intValue()));
-
-			return sizedIngredients;
-		}
-
-		SizedIngredient(Ingredient ingredient, int size) {
-			this.ingredient = ingredient;
-			this.size = size;
-		}
-
-		long toLong() {
-			return ingredient.toLong() + (long) size * 10000_0000_0000L;
-		}
-
-		static SizedIngredient fromLong(long value) {
-			Ingredient ingredient = Ingredient.fromLong(value);
-			int size = (int) (value / 10000_0000_0000L % 10000);
-			return new SizedIngredient(ingredient, size);
-		}
-
-		boolean isAvailable() {
-			int count = 0;
-
-			for (ItemStack stack : player().inventory.mainInventory) {
-				if (!ingredient.equals(Ingredient.fromItemStack(stack)))
-					continue;
-
-				count += stack.stackSize;
-				if (count >= size)
-					return true;
-			}
-
-			return false;
-		}
-
-		public String toString() {
-			return size + "x " + ingredient.toString();
-		}
-
+		return String.format("%d %d %d %d %d", category, page, slot, variant, craftSlot);
 	}
 
 }

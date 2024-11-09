@@ -8,7 +8,9 @@
 package dev.l3g7.griefer_utils.features.item.recraft;
 
 import com.google.gson.JsonElement;
+import dev.l3g7.griefer_utils.core.api.file_provider.FileProvider;
 import dev.l3g7.griefer_utils.core.util.ItemUtil;
+import dev.l3g7.griefer_utils.features.item.item_saver.specific_item_saver.TempItemSaverBridge;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -85,11 +87,14 @@ public abstract class RecraftAction {
 			return compression == other.compression;
 		}
 
-		public int getSlot(int[] excludedSlots) {
+		public int getSlot(int[] excludedSlots, boolean checkForItemSaver) {
 			ItemStack[] inv = player().inventory.mainInventory;
 			invLoop:
 			for (int i = 0; i < inv.length; i++) {
 				if (!check(this, inv[i]))
+					continue;
+
+				if (checkForItemSaver && FileProvider.getBridge(TempItemSaverBridge.class).isProtected(inv[i]))
 					continue;
 
 				for (int excludedSlot : excludedSlots)
@@ -98,24 +103,6 @@ public abstract class RecraftAction {
 
 				return i;
 			}
-
-			return -1;
-		}
-
-		public int getSlot() {
-			ItemStack[] inv = player().inventory.mainInventory;
-			for (int i = 0; i < inv.length; i++) {
-				if (!this.equals(fromItemStack(inv[i])))
-					continue;
-
-				if (i < 9)
-					i += 36;
-				return lastSlotIndex = i + 45;
-			}
-
-			// Check if the item still is in the player's cursor
-			if (this.equals(fromItemStack(player().inventory.getItemStack())))
-				return lastSlotIndex;
 
 			return -1;
 		}

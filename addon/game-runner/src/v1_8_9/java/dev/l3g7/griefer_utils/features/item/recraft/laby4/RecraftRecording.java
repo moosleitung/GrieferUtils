@@ -21,11 +21,11 @@ import dev.l3g7.griefer_utils.features.item.recraft.RecraftRecordingCore.Recordi
 import dev.l3g7.griefer_utils.features.item.recraft.crafter.CraftPlayer;
 import dev.l3g7.griefer_utils.features.item.recraft.decompressor.DecompressPlayer;
 import dev.l3g7.griefer_utils.labymod.laby4.settings.Icons;
-import dev.l3g7.griefer_utils.labymod.laby4.temp.TempSettingActivityInitEvent;
 import dev.l3g7.griefer_utils.labymod.laby4.settings.Laby4Setting;
 import dev.l3g7.griefer_utils.labymod.laby4.settings.SettingsImpl;
 import dev.l3g7.griefer_utils.labymod.laby4.settings.types.HeaderSettingImpl;
 import dev.l3g7.griefer_utils.labymod.laby4.settings.types.SwitchSettingImpl;
+import dev.l3g7.griefer_utils.labymod.laby4.temp.TempSettingActivityInitEvent;
 import dev.l3g7.griefer_utils.labymod.laby4.util.Laby4Util;
 import net.labymod.api.client.component.Component;
 import net.labymod.api.client.gui.icon.Icon;
@@ -251,8 +251,11 @@ public class RecraftRecording extends net.labymod.api.configuration.loader.Confi
 					}
 
 					JsonArray jsonActions = object.getAsJsonArray("actions");
-					for (JsonElement jsonAction : jsonActions)
-						recording.actions().add(recording.mode().get().actionParser.apply(jsonAction));
+					for (JsonElement jsonAction : jsonActions) {
+						RecraftAction action = recording.mode().get().actionParser.apply(jsonAction);
+						if (action != null)
+							recording.actions().add(action);
+					}
 
 					if (object.has("successor")) {
 						int index = object.get("successor").getAsInt();

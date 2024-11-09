@@ -144,12 +144,16 @@ public class CraftPlayer {
 		CraftAction action = pendingActions.poll();
 		hotbarSourceIds = null;
 
-		if ((sourceIds = action.getSlotsFromHotbar()) != null)
+		if ((sourceIds = action.getSlotsFromInventory(true, true)) != null) {
 			state = INTO_CRAFTING;
-		else if ((sourceIds = action.getSlotsFromInventory()) != null)
+		} else if ((sourceIds = action.getSlotsFromInventory(false, true)) != null) {
 			state = INTO_HOTBAR;
-		else
+		} else {
+			if (action.getSlotsFromInventory(false, false) != null)
+				labyBridge.notify("§cAktion blockiert \u26A0", "§cDer Spezifische Item-Saver hat diese Aktion blockiert!");
+
 			return true;
+		}
 
 		ingredients = action.ingredients;
 		executeClicks();

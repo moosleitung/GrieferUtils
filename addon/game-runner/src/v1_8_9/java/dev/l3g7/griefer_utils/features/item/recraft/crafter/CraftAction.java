@@ -26,7 +26,7 @@ public class CraftAction extends RecraftAction {
 		this.ingredients = ingredients;
 	}
 
-	public int[] getSlotsFromHotbar() {
+	public int[] getSlotsFromInventory(boolean hotbarOnly, boolean checkForItemSaver) {
 		int[] slots = new int[9];
 		Arrays.fill(slots, -1);
 
@@ -36,27 +36,12 @@ public class CraftAction extends RecraftAction {
 				continue;
 			}
 
-			int slot = slots[i] = ingredients[i].getSlot(slots);
-			if (slot == -1 || slot >= 9)
-				return null;
-		}
-
-		return slots;
-	}
-
-	public int[] getSlotsFromInventory() {
-		int[] slots = new int[9];
-		Arrays.fill(slots, -1);
-
-		for (int i = 0; i < ingredients.length; i++) {
-			if (ingredients[i] == null) {
-				slots[i] = -1;
-				continue;
-			}
-
-			if ((slots[i] = ingredients[i].getSlot(slots)) == -1)
+			int slot = slots[i] = ingredients[i].getSlot(slots, true);
+			if (slot == -1)
 				return null;
 
+			if (hotbarOnly && slot >= 9)
+				return null;
 		}
 
 		return slots;

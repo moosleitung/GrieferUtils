@@ -12,7 +12,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
-import dev.l3g7.griefer_utils.labymod.laby3.temp.TempAddonsGuiWithCustomBackButton;
 import dev.l3g7.griefer_utils.core.misc.gui.elements.laby_polyfills.DrawUtils;
 import dev.l3g7.griefer_utils.core.settings.types.HeaderSetting;
 import dev.l3g7.griefer_utils.core.util.ItemUtil;
@@ -21,6 +20,7 @@ import dev.l3g7.griefer_utils.features.item.recraft.RecraftRecordingCore;
 import dev.l3g7.griefer_utils.features.item.recraft.RecraftRecordingCore.RecordingMode;
 import dev.l3g7.griefer_utils.labymod.laby3.settings.Icon;
 import dev.l3g7.griefer_utils.labymod.laby3.settings.Laby3Setting;
+import dev.l3g7.griefer_utils.labymod.laby3.temp.TempAddonsGuiWithCustomBackButton;
 import net.labymod.settings.LabyModAddonsGui;
 import net.labymod.settings.elements.ControlElement.IconData;
 import net.labymod.settings.elements.SettingsElement;
@@ -159,8 +159,11 @@ public class RecraftRecording implements dev.l3g7.griefer_utils.features.item.re
 		}
 
 		JsonArray jsonActions = object.getAsJsonArray("actions");
-		for (JsonElement jsonAction : jsonActions)
-			recording.actions().add(recording.mode().get().actionParser.apply(jsonAction));
+		for (JsonElement jsonAction : jsonActions) {
+			RecraftAction action = recording.mode().get().actionParser.apply(jsonAction);
+			if (action != null)
+				recording.actions().add(action);
+		}
 
 		if (object.has("successor"))
 			recording.successor.fromInt(object.get("successor").getAsInt());
