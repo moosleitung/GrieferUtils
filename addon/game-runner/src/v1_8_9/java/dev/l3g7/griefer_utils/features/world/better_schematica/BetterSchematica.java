@@ -10,11 +10,11 @@ package dev.l3g7.griefer_utils.features.world.better_schematica;
 import dev.l3g7.griefer_utils.core.api.event_bus.EventListener;
 import dev.l3g7.griefer_utils.core.api.file_provider.FileProvider;
 import dev.l3g7.griefer_utils.core.api.file_provider.Singleton;
-import dev.l3g7.griefer_utils.features.Feature;
-import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
 import dev.l3g7.griefer_utils.core.events.TickEvent.RenderTickEvent;
 import dev.l3g7.griefer_utils.core.events.network.PacketEvent.PacketSendEvent;
+import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
 import dev.l3g7.griefer_utils.core.util.SchematicaUtil;
+import dev.l3g7.griefer_utils.features.Feature;
 import net.minecraft.network.play.client.C08PacketPlayerBlockPlacement;
 
 import static dev.l3g7.griefer_utils.core.api.bridges.LabyBridge.labyBridge;
@@ -52,7 +52,7 @@ public class BetterSchematica extends Feature {
 		super.init();
 
 		if (!SCHEMATICA) {
-			enabled.name("§7Besseres Schematica")
+			enabled.name("§7Schematica verbessern")
 				.description("Verbessert Schematica.\n\n(Schematica ist nicht installiert.)")
 				.set(false)
 				.disable()
