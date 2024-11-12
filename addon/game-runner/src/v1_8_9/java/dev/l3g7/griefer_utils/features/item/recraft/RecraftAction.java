@@ -28,7 +28,6 @@ public abstract class RecraftAction {
 		public final int itemId;
 		public final int compression;
 		public final int meta;
-		private int lastSlotIndex = -1;
 
 		public static Ingredient fromItemStack(ItemStack stack) {
 			if (stack == null || stack.isItemStackDamageable())

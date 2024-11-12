@@ -16,6 +16,7 @@ import dev.l3g7.griefer_utils.core.util.MinecraftUtil;
 import dev.l3g7.griefer_utils.features.item.recraft.Recraft;
 import dev.l3g7.griefer_utils.features.item.recraft.RecraftAction.Ingredient;
 import dev.l3g7.griefer_utils.features.item.recraft.RecraftRecording;
+import dev.l3g7.griefer_utils.features.uncategorized.debug.RecraftLogger;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.inventory.GuiChest;
 import net.minecraft.item.ItemStack;
@@ -64,6 +65,7 @@ public class RecipeRecorder {
 		if (event.gui instanceof GuiChest) {
 			if (executedCommand) {
 				isMenuOpen = true;
+				RecraftLogger.log("Started recording, temp: " + (recording == Recraft.tempRecording));
 				recording.actions().clear();
 				recording.mode().set(RECIPE);
 				action = new RecipeAction();
@@ -110,22 +112,21 @@ public class RecipeRecorder {
 				mc().displayGuiScreen(null);
 			}
 
+			RecraftLogger.log("Recorded category: " + (action.category == -1 ? -slot : action.category));
 			return;
 		}
 
 		if (slot == 45)  { // Back button
 			if (action.slot != -1) {
 				action.slot = -1;
-				if (action.category == 0)
+				RecraftLogger.log("Clicked back, reset slot");
+				if (action.category == 0) {
 					action.page = -1;
-			} else if (recording.actions().isEmpty()) {
+					RecraftLogger.log("Clicked back, reset page");
+				}
+			} else {
 				action.page = action.category = -1;
-			} else if (recording != Recraft.tempRecording) {
-				labyBridge.notify("§cFehler \u26A0", "§cNachfolgende Aktionen müssen in derselben Kategorie sein!");
-				recording = Recraft.tempRecording;
-				mc().displayGuiScreen(previousScreen);
-				previousScreen = null;
-				event.cancel();
+				RecraftLogger.log("Clicked back, reset category");
 			}
 
 			return;
@@ -134,14 +135,20 @@ public class RecipeRecorder {
 		boolean crafted = "§7Klicke, um dieses Rezept herzustellen.".equals(ItemUtil.getLoreAtIndex(packet.getClickedItem(), 0));
 
 		if (!crafted && action.slot == -1) {
-			if (slot < 45)
+			if (slot < 45) {
 				action.slot = slot;
-			else if (slot == 52)
+				RecraftLogger.log("Clicked on slot " + slot);
+			} else if (slot == 52) {
 				action.page = Math.min(0, action.page - 1);
-			else if (slot == 53)
+				RecraftLogger.log("Reduced page to " + action.page);
+			} else if (slot == 53) {
 				action.page++;
-			else if (recording != Recraft.tempRecording)
-				labyBridge.notify("§eWarnung \u26A0", "§eBitte wähle das Item via GrieferGames' Gui aus!");
+				RecraftLogger.log("Increased page to " + action.page);
+			} else {
+				RecraftLogger.log("!!! Forcing shotcut !!!");
+				if (recording != Recraft.tempRecording)
+					labyBridge.notify("§eWarnung \u26A0", "§eBitte wähle das Item via GrieferGames' Gui aus!");
+			}
 
 			return;
 		}
@@ -178,9 +185,14 @@ public class RecipeRecorder {
 		action.craftingIngredients = SizedIngredient.fromIngredients(ingredients);
 		action.craftSlot = slot;
 
+		RecraftLogger.log(String.format("Finalizing action, variant=%d, craftSlot=%d, result=%s", action.variant, slot, action.result));
+
 		if (!recording.actions().contains(action)) {
 			recording.actions().add(action);
+			RecraftLogger.log("Added action " + action);
 			action = action.copy();
+		} else {
+			RecraftLogger.log("Skipped adding action");
 		}
 	}
 

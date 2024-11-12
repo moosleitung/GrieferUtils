@@ -44,6 +44,8 @@ class ActionExecutor {
 		this.current = previous.target.copy();
 		if (current.page != target.page || current.slot != target.slot)
 			state = BACK_TO_PAGE;
+		else if (current.category != target.category)
+			state = BACK_TO_CATEGORY;
 		else
 			state = VARIANT;
 	}
@@ -56,21 +58,30 @@ class ActionExecutor {
 			return true;
 
 		ActionState startState = state;
-
-		if (state == BACK_TO_PAGE) {
-			attemptShortcut((current.page == target.page) ? SLOT : PAGE);
-		} else if (state == CATEGORY) {
-			attemptShortcut((current.page == target.page) ? SLOT : PAGE);
-			if (state != SHORTCUT && target.slot == -1) {
-				RecraftLogger.log("Forced shortcut failed");
-				labyBridge.notify("§eAktion übersprungen \u26A0", "§eDu hattest nicht genügend Zutaten im Inventar!");
-				state = CRAFT;
-				return false;
-			}
-		} else if (state == SHORTCUT || state == SLOT) {
-			state = current.variant == target.variant ? CRAFT : VARIANT;
-		} else {
-			state = ActionState.values()[state.ordinal() + 1];
+		switch (state) {
+			case BACK_TO_CATEGORY:
+				state = CATEGORY;
+				break;
+			case BACK_TO_PAGE:
+				if (current.category != target.category)
+					state = BACK_TO_CATEGORY;
+				else
+					attemptShortcut((current.page == target.page) ? SLOT : PAGE);
+				break;
+			case CATEGORY:
+				attemptShortcut((current.page == target.page) ? SLOT : PAGE);
+				if (state != SHORTCUT && target.slot == -1) {
+					RecraftLogger.log("Forced shortcut failed");
+					labyBridge.notify("§eAktion übersprungen \u26A0", "§eDu hattest nicht genügend Zutaten im Inventar!");
+					state = CRAFT;
+					return false;
+				}
+				break;
+			case SHORTCUT, SLOT:
+				state = current.variant == target.variant ? CRAFT : VARIANT;
+				break;
+			default:
+				state = ActionState.values()[state.ordinal() + 1];
 		}
 
 		RecraftLogger.log("Continued from " + startState + " to " + state);

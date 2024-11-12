@@ -19,7 +19,8 @@ enum ActionState {
 	VARIANT(e -> e.target.variant > e.current.variant ? 50 : 48, e -> (e.target.variant > e.current.variant ? ++e.current.variant : --e.current.variant) == e.target.variant),
 	CRAFT(e -> e.target.craftSlot, e -> true),
 
-	BACK_TO_PAGE(e -> 45, e -> true);
+	BACK_TO_PAGE(e -> 45, e -> true),
+	BACK_TO_CATEGORY(e -> 45, e -> true);
 
 	public final Function<ActionExecutor, Integer> slotFunction;
 	public final Predicate<ActionExecutor> continuationPredicate;
