@@ -125,6 +125,9 @@ class ActionExecutor {
 				return i;
 
 			int variant = ItemUtil.getCompressionLevel(inv[i]) + 1;
+			if (variant == 8)
+				continue;
+
 			int newDiff = Math.abs(variant - target.variant);
 			if (newDiff == 0) {
 				current.variant = variant;
