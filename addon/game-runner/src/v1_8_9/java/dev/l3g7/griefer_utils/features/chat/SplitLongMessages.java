@@ -7,7 +7,10 @@
 
 package dev.l3g7.griefer_utils.features.chat;
 
+import de.emotechat.addon.gui.chat.suggestion.EmoteSuggestionsMenu;
+import dev.l3g7.griefer_utils.core.api.bridges.Bridge.ExclusiveTo;
 import dev.l3g7.griefer_utils.core.api.event_bus.EventListener;
+import dev.l3g7.griefer_utils.core.api.file_provider.FileProvider;
 import dev.l3g7.griefer_utils.core.api.file_provider.Singleton;
 import dev.l3g7.griefer_utils.core.api.reflection.Reflection;
 import dev.l3g7.griefer_utils.core.events.GuiScreenEvent.KeyboardInputEvent;
@@ -21,6 +24,11 @@ import net.labymod.ingamechat.GuiChatCustom;
 import net.minecraft.client.gui.GuiChat;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.init.Items;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -211,7 +219,8 @@ public class SplitLongMessages extends Feature {
 
 		return stringBuilder.length() + 1;
 	}
-/*
+
+	@ExclusiveTo(LABY_3)
 	@Mixin(value = EmoteSuggestionsMenu.class, remap = false)
 	private static class MixinEmoteSuggestionsMenu {
 
@@ -239,5 +248,5 @@ public class SplitLongMessages extends Feature {
 		}
 
 	}
-*/
+
 }
