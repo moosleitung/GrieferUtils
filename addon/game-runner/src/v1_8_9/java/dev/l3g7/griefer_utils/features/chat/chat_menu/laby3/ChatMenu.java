@@ -23,6 +23,7 @@ import dev.l3g7.griefer_utils.core.misc.NameCache;
 import dev.l3g7.griefer_utils.core.settings.BaseSetting;
 import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
 import dev.l3g7.griefer_utils.features.Feature;
+import dev.l3g7.griefer_utils.features.chat.chat_menu.laby3.chat_line_util.ChatLineUtil;
 import net.labymod.core_implementation.mc18.MinecraftImplementation;
 import net.labymod.ingamechat.tabs.GuiChatNameHistory;
 import net.labymod.settings.elements.SettingsElement;

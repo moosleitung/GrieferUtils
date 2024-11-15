@@ -57,6 +57,8 @@ public class InjectorBase {
 	public boolean shouldTransform(String name, String transformedName) {
 		if (name.startsWith("com.github.lunatrius.schematica"))
 			Constants.SCHEMATICA = true;
+		else if (name.startsWith("de.emotechat.addon"))
+			Constants.EMOTECHAT = true;
 
 		return transformers.containsKey(transformedName);
 	}

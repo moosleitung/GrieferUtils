@@ -5,9 +5,10 @@
  * you may not use this file except in compliance with the License.
  */
 
-package dev.l3g7.griefer_utils.features.chat.chat_menu.laby3;
+package dev.l3g7.griefer_utils.features.chat.chat_menu.laby3.chat_line_util;
 
 import dev.l3g7.griefer_utils.core.api.bridges.Bridge.ExclusiveTo;
+import dev.l3g7.griefer_utils.core.api.misc.Constants;
 import dev.l3g7.griefer_utils.core.api.misc.Pair;
 import dev.l3g7.griefer_utils.core.api.reflection.Reflection;
 import net.labymod.core_implementation.mc18.gui.GuiChatAdapter;
@@ -56,13 +57,14 @@ public class ChatLineUtil {
 				continue;
 
 			// Check mouse X
-			GUChatLine chatline = (GUChatLine) list.get(hoveredLine);
+			ChatLine chatline = list.get(hoveredLine);
 			IChatComponent lineComponent = (IChatComponent) chatline.getComponent();
 			int x = mc().fontRendererObj.getStringWidth(GuiUtilRenderComponents.func_178909_a(lineComponent.getFormattedText(), false));
 			if (x <= mouseX)
 				continue;
 
-			return new Pair<>(chatline.modifiedComponent, chatline.originalComponent);
+			GUChatLine guChatLine = (GUChatLine) chatline;
+			return new Pair<>(guChatLine.getModifiedComponent(), guChatLine.getOriginalComponent());
 		}
 
 		return null;
@@ -92,7 +94,13 @@ public class ChatLineUtil {
 
 		@Redirect(method = "setChatLine", at = @At(value = "INVOKE", target = "Lnet/labymod/ingamechat/renderer/ChatRenderer;addChatLine(Ljava/lang/String;ZLjava/lang/String;Ljava/lang/Object;IILjava/lang/Integer;Z)V"))
 		public void redirectAddLine(ChatRenderer instance, String message, boolean secondChat, String room, Object component, int updateCounter, int chatLineId, Integer highlightColor, boolean refresh) {
-			instance.getChatLines().add(0, new GUChatLine(grieferUtils$modifiedComponent, grieferUtils$unmodifiedComponent, message, secondChat, room, component, updateCounter, chatLineId, highlightColor));
+			ChatLine line = null;
+			if (Constants.EMOTECHAT)
+				line = GUEmoteChatLine.tryCreatingEmoteChatLine(instance, grieferUtils$modifiedComponent, grieferUtils$unmodifiedComponent, message, secondChat, room, component, updateCounter, chatLineId, highlightColor);
+			if (line == null)
+				line = new GUBasicChatLine(grieferUtils$modifiedComponent, grieferUtils$unmodifiedComponent, message, secondChat, room, component, updateCounter, chatLineId, highlightColor);
+
+			instance.getChatLines().add(0, line);
 			if (!refresh)
 				Reflection.set(instance, "animationShift", System.currentTimeMillis());
 		}
