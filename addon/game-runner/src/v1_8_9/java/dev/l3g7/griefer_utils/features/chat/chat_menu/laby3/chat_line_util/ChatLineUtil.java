@@ -70,6 +70,16 @@ public class ChatLineUtil {
 		return null;
 	}
 
+	public static ChatLine generateChatLine(ChatRenderer instance, IChatComponent modifiedComponent, IChatComponent originalComponent,  String message, boolean secondChat, String room, Object component, int updateCounter, int chatLineId, Integer highlightColor) {
+		if (Constants.EMOTECHAT) {
+			ChatLine line = GUEmoteChatLine.tryCreatingEmoteChatLine(instance, modifiedComponent, originalComponent, message, secondChat, room, component, updateCounter, chatLineId, highlightColor);
+			if (line != null)
+				return line;
+		}
+
+		return new GUBasicChatLine(modifiedComponent, originalComponent, message, secondChat, room, component, updateCounter, chatLineId, highlightColor);
+	}
+
 	@ExclusiveTo(LABY_3)
 	@Mixin(value = GuiChatAdapter.class, remap = false)
 	private static class MixinGuiChatAdapter {
@@ -94,13 +104,7 @@ public class ChatLineUtil {
 
 		@Redirect(method = "setChatLine", at = @At(value = "INVOKE", target = "Lnet/labymod/ingamechat/renderer/ChatRenderer;addChatLine(Ljava/lang/String;ZLjava/lang/String;Ljava/lang/Object;IILjava/lang/Integer;Z)V"))
 		public void redirectAddLine(ChatRenderer instance, String message, boolean secondChat, String room, Object component, int updateCounter, int chatLineId, Integer highlightColor, boolean refresh) {
-			ChatLine line = null;
-			if (Constants.EMOTECHAT)
-				line = GUEmoteChatLine.tryCreatingEmoteChatLine(instance, grieferUtils$modifiedComponent, grieferUtils$unmodifiedComponent, message, secondChat, room, component, updateCounter, chatLineId, highlightColor);
-			if (line == null)
-				line = new GUBasicChatLine(grieferUtils$modifiedComponent, grieferUtils$unmodifiedComponent, message, secondChat, room, component, updateCounter, chatLineId, highlightColor);
-
-			instance.getChatLines().add(0, line);
+			instance.getChatLines().add(0, generateChatLine(instance, grieferUtils$modifiedComponent, grieferUtils$unmodifiedComponent, message, secondChat, room, component, updateCounter, chatLineId, highlightColor));
 			if (!refresh)
 				Reflection.set(instance, "animationShift", System.currentTimeMillis());
 		}
