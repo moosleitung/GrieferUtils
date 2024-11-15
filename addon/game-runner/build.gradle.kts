@@ -56,7 +56,8 @@ tasks.register("runBuildPostProcessor", JavaExec::class) {
 	group = "GrieferUtils"
 	jvmArgs(
 		"-Dgriefer_utils.version=" + props.getProperty("version"),
-		"-Dgriefer_utils.debug=" + props.getProperty("debug")
+		"-Dgriefer_utils.debug=" + props.getProperty("debug"),
+		"-Dgriefer_utils.beta=" + props.getProperty("beta")
 	)
 	mainClass.set("dev.l3g7.griefer_utils.post_processor.BuildPostProcessor")
 }

@@ -41,6 +41,7 @@ public class BuildPostProcessor {
 		"description", "\uD83D\uDC4B",
 		"icon", "griefer_utils_icon",
 		"debug", System.getProperty("griefer_utils.debug"),
+		"beta", System.getProperty("griefer_utils.beta"),
 		"transformerClass", "dev.l3g7.griefer_utils.labymod.laby3.Init",
 		"addonVersion", System.getProperty("griefer_utils.version")
 	);
