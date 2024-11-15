@@ -54,9 +54,8 @@ public class Settings extends Feature {
 
 	static {
 		releaseChannel.callback(v -> {
-			if (v == STABLE) {
-				labyBridge.notify("§e§lFehler ⚠", "§eKlappt noch nicht");
-				releaseChannel.set(BETA);
+			if (AutoUpdater.isBeta && v == STABLE) {
+				labyBridge.notify("§c§lWarnung ⚠", "§cDowngraden wird wahrscheinlich zu Fehlern führen!");
 			}
 		});
 	}
