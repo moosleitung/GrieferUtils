@@ -185,7 +185,7 @@ public class PotionTimer extends Widget {
 
 			// Get names as Strings
 			List<String> keys = potions.values().stream()
-					.filter(d -> d.countdown != null && d.countdown.isExpired())
+					.filter(d -> d.countdown != null && !d.countdown.isExpired())
 					.map(this::getDisplayName)
 					.collect(Collectors.toList());
 
@@ -205,7 +205,7 @@ public class PotionTimer extends Widget {
 
 			// Get expirations dates as Strings
 			List<String> values = potions.values().stream()
-					.filter(d -> d.countdown != null && d.countdown.isExpired())
+					.filter(d -> d.countdown != null && !d.countdown.isExpired())
 					.map(this::getFormattedTime)
 					.collect(Collectors.toList());
 
