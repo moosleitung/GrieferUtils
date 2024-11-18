@@ -200,7 +200,7 @@ public abstract class Laby4Widget extends TextHudWidget<ModuleConfig> implements
 	// Registration
 
 	protected String getComparisonName() {
-		return getClass().getPackage().getName() + getSetting().name();
+		return owner.getClass().getPackage().getName() + getSetting().name();
 	}
 
 	@OnEnable
