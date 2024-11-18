@@ -10,12 +10,12 @@ package dev.l3g7.griefer_utils.features.world;
 import dev.l3g7.griefer_utils.core.api.event_bus.EventListener;
 import dev.l3g7.griefer_utils.core.api.file_provider.Singleton;
 import dev.l3g7.griefer_utils.core.api.reflection.Reflection;
-import dev.l3g7.griefer_utils.core.settings.types.HeaderSetting;
-import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
 import dev.l3g7.griefer_utils.core.events.GuiScreenEvent;
 import dev.l3g7.griefer_utils.core.events.render.DrawGuiContainerForegroundLayerEvent;
-import dev.l3g7.griefer_utils.features.Feature;
 import dev.l3g7.griefer_utils.core.misc.gui.elements.laby_polyfills.ModTextField;
+import dev.l3g7.griefer_utils.core.settings.types.HeaderSetting;
+import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
+import dev.l3g7.griefer_utils.features.Feature;
 import net.minecraft.client.gui.GuiHopper;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
@@ -105,9 +105,8 @@ public class ItemSearch extends Feature {
 	@EventListener
 	public void onMousePress(GuiScreenEvent.MouseInputEvent.Post event) {
 		if (searchField != null && Mouse.getEventButton() != -1) {
-			GuiScreen gui = mc().currentScreen;
-			int guiLeft = Reflection.get(gui, "guiLeft");
-			int guiTop = Reflection.get(gui, "guiTop");
+			int guiLeft = Reflection.get(event.gui, "guiLeft");
+			int guiTop = Reflection.get(event.gui, "guiTop");
 
 			int scale = new ScaledResolution(mc()).getScaleFactor();
 			int x = Mouse.getEventX() / scale;
