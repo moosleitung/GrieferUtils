@@ -71,7 +71,9 @@ public class AutoUnnick extends Feature {
 			return;
 		}
 
-		IChatComponentUtil.setNameWithPrefix(event.component, nickName, NameCache.getName(nickName), new PrefixFinder(parts[0], parts[1]).getPrefix(), true);
+		String name = NameCache.getName(nickName);
+		if (name != null)
+			IChatComponentUtil.setNameWithPrefix(event.component, nickName, name, new PrefixFinder(parts[0], parts[1]).getPrefix(), true);
 	}
 
 	@EventListener(priority = Priority.HIGH)
