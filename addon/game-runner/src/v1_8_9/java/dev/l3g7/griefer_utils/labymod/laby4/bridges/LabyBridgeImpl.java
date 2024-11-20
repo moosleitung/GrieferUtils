@@ -7,10 +7,14 @@
 
 package dev.l3g7.griefer_utils.labymod.laby4.bridges;
 
+import com.google.gson.JsonObject;
+import com.google.gson.internal.Streams;
+import com.google.gson.stream.JsonReader;
 import dev.l3g7.griefer_utils.core.api.BugReporter;
 import dev.l3g7.griefer_utils.core.api.bridges.Bridge;
 import dev.l3g7.griefer_utils.core.api.bridges.Bridge.ExclusiveTo;
 import dev.l3g7.griefer_utils.core.api.bridges.LabyBridge;
+import dev.l3g7.griefer_utils.core.api.file_provider.FileProvider;
 import dev.l3g7.griefer_utils.core.api.file_provider.Singleton;
 import dev.l3g7.griefer_utils.core.api.mapping.Mapping;
 import dev.l3g7.griefer_utils.core.api.misc.Pair;
@@ -42,6 +46,7 @@ import net.labymod.core.main.LabyMod;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.io.InputStreamReader;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.util.UUID;
@@ -76,6 +81,12 @@ public class LabyBridgeImpl implements LabyBridge {
 	@Override
 	public String addonVersion() {
 		return Main.getAddon().info().getVersion();
+	}
+
+	@Override
+	public boolean isBeta() {
+		JsonObject addonJson = Streams.parse(new JsonReader(new InputStreamReader(FileProvider.getData("addon.json")))).getAsJsonObject();
+		return !addonJson.has("beta") || addonJson.get("beta").getAsBoolean();
 	}
 
 	@Override

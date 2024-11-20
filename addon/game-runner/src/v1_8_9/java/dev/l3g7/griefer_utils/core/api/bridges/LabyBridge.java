@@ -45,6 +45,8 @@ public interface LabyBridge {
 
 	String addonVersion();
 
+	boolean isBeta();
+
 	float partialTicks();
 
 	int chatButtonWidth();

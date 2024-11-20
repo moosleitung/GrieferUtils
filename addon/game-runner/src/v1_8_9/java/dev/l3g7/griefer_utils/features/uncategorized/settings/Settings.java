@@ -9,7 +9,6 @@ package dev.l3g7.griefer_utils.features.uncategorized.settings;
 
 import dev.l3g7.griefer_utils.core.api.BugReporter;
 import dev.l3g7.griefer_utils.core.api.file_provider.Singleton;
-import dev.l3g7.griefer_utils.core.auto_update.AutoUpdater;
 import dev.l3g7.griefer_utils.core.auto_update.ReleaseInfo.ReleaseChannel;
 import dev.l3g7.griefer_utils.core.misc.badges.Badges;
 import dev.l3g7.griefer_utils.core.settings.types.CategorySetting;
@@ -50,11 +49,11 @@ public class Settings extends Feature {
 		.description("Ob auf die neuste stabile oder die Beta-Version geupdatet werden soll.")
 		.config("settings.auto_update.release_channel")
 		.icon("file")
-		.defaultValue(AutoUpdater.isBeta ? BETA : STABLE);
+		.defaultValue(labyBridge.isBeta() ? BETA : STABLE);
 
 	static {
 		releaseChannel.callback(v -> {
-			if (AutoUpdater.isBeta && v == STABLE) {
+			if (labyBridge.isBeta() && v == STABLE) {
 				labyBridge.notify("§c§lWarnung ⚠", "§cDowngraden wird wahrscheinlich zu Fehlern führen!");
 			}
 		});

@@ -64,7 +64,6 @@ public class AutoUpdater {
 	private static MethodHandles.Lookup lookup;
 
 	public static boolean hasUpdated = false;
-	public static boolean isBeta = false;
 
 	/**
 	 * Lazily creates an unrestricted lookup and returns it.
@@ -118,12 +117,10 @@ public class AutoUpdater {
 			for (File addonJar : addonJars)
 				checkJarForDeletion(addonJar, infoProvider);
 
-		JsonObject addonJson = getAddonJson();
-		if (addonJson.has("beta") && addonJson.get("beta").getAsBoolean())
-			isBeta = true;
-
 		if (!isEnabled())
 			return null;
+
+		JsonObject addonJson = getAddonJson();
 
 		// Get info about the latest release
 		String url = System.getProperty("griefer_utils.latest_release_url", "https://api.grieferutils.l3g7.dev/v6/latest_release/");

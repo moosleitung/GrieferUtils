@@ -7,6 +7,7 @@
 
 package dev.l3g7.griefer_utils.labymod.laby3.bridges;
 
+import com.google.gson.JsonObject;
 import dev.l3g7.griefer_utils.core.api.BugReporter;
 import dev.l3g7.griefer_utils.core.api.bridges.Bridge;
 import dev.l3g7.griefer_utils.core.api.bridges.Bridge.ExclusiveTo;
@@ -51,7 +52,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @ExclusiveTo(LABY_3)
 public class LabyBridgeImpl implements LabyBridge {
 
-	private String addonVersion = null;
+	private JsonObject addonJson = null;
 
 	@Override
 	public boolean obfuscated() {
@@ -68,18 +69,26 @@ public class LabyBridgeImpl implements LabyBridge {
 		return LabyModCoreMod.isForge();
 	}
 
-	@Override
-	public String addonVersion() {
-		if (addonVersion != null)
-			return addonVersion;
-
+	private JsonObject getAddonJson() {
+		if (addonJson != null)
+			return addonJson;
 		try {
-			String addonJson = new String(IOUtil.toByteArray(FileProvider.getData("addon.json")), UTF_8);
-			addonVersion = JsonParse.parse(addonJson).getAsJsonObject().get("addonVersion").getAsString();
-			return addonVersion;
+			String addonJsonData = new String(IOUtil.toByteArray(FileProvider.getData("addon.json")), UTF_8);
+			addonJson = JsonParse.parse(addonJsonData).getAsJsonObject();
+			return addonJson;
 		} catch (IOException e) {
 			throw Util.elevate(e);
 		}
+	}
+
+	@Override
+	public String addonVersion() {
+		return addonJson.get("addonVersion").getAsString();
+	}
+
+	@Override
+	public boolean isBeta() {
+		return !addonJson.has("beta") || addonJson.get("beta").getAsBoolean();
 	}
 
 	@Override
