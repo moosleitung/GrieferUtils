@@ -24,14 +24,18 @@ public class PlayerListEntry {
 	public static final PlayerListEntry INVALID_PLAYER = new PlayerListEntry();
 
 	public static PlayerListEntry getEntry(String name) {
-		return getEntry(name, s -> {});
+		return getEntry(name, null);
 	}
 
-		public static PlayerListEntry getEntry(String name, Consumer<String> idConsumer) {
+	public static PlayerListEntry getEntry(String name, Consumer<String> idConsumer) {
 		if (!Constants.UNFORMATTED_PLAYER_NAME_PATTERN.matcher(name).matches())
 			return INVALID_PLAYER;
 
-		return LOOKUP_MAP.computeIfAbsent(name, k -> new PlayerListEntry(name, null));
+		return LOOKUP_MAP.computeIfAbsent(name, k -> {
+			PlayerListEntry e = new PlayerListEntry(name, null);
+			e.idConsumer = idConsumer;
+			return e;
+		});
 	}
 
 	public String name;
@@ -58,7 +62,9 @@ public class PlayerListEntry {
 	}
 
 	public void setId(String id) {
-		idConsumer.accept(this.id = id);
+		this.id = id;
+		if (idConsumer != null)
+			idConsumer.accept(id);
 	}
 
 	public boolean isMojang() {
