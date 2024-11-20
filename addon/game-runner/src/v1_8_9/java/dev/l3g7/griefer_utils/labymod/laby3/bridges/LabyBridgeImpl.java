@@ -83,12 +83,12 @@ public class LabyBridgeImpl implements LabyBridge {
 
 	@Override
 	public String addonVersion() {
-		return addonJson.get("addonVersion").getAsString();
+		return getAddonJson().get("addonVersion").getAsString();
 	}
 
 	@Override
 	public boolean isBeta() {
-		return !addonJson.has("beta") || addonJson.get("beta").getAsBoolean();
+		return !getAddonJson().has("beta") || getAddonJson().get("beta").getAsBoolean();
 	}
 
 	@Override
