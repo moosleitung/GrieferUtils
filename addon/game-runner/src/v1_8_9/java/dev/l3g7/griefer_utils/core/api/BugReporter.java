@@ -103,7 +103,7 @@ public class BugReporter {
 
 			// Report bug
 			try {
-				HttpURLConnection conn = (HttpURLConnection) new URL(DYNAMIC_API_URL + "/bugReport").openConnection();
+				HttpURLConnection conn = (HttpURLConnection) new URL(DYNAMIC_API_URL + "/bugReport/" + labyBridge.addonVersion()).openConnection();
 
 				if (conn instanceof HttpsURLConnection)
 					((HttpsURLConnection) conn).setSSLSocketFactory(CustomSSLSocketFactoryProvider.getCustomFactory());
@@ -124,7 +124,8 @@ public class BugReporter {
 					error.printStackTrace(new PrintStream(out));
 					out.flush();
 				}
-				conn.getInputStream().close();
+
+				conn.getResponseCode();
 				conn.disconnect();
 			} catch (IOException ex) {
 				throw new RuntimeException(ex);
