@@ -129,7 +129,6 @@ public class CraftPlayer {
 					player().openContainer.putStackInSlot(1, null);
 				}
 				pendingActions = null;
-//				windowId = null; TODO: Was this required?
 				return;
 			}
 		}
@@ -328,7 +327,7 @@ public class CraftPlayer {
 			return;
 
 		state = IDLE;
-		onFinish = () -> false;
+		onFinish = () -> true;
 	}
 
 	enum State {
