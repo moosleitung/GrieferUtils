@@ -110,6 +110,9 @@ class ActionExecutor {
 	}
 
 	private int calculateShortcut() {
+		if (target.result == null)
+			return -1;
+
 		int maxVariantDiff = Math.abs(current.page - target.page) + Math.abs(current.variant - target.variant);
 
 		int bestSlot = -1;
