@@ -11,6 +11,7 @@ import de.emotechat.addon.EmoteChatAddon;
 import de.emotechat.addon.gui.ChatLineEntry;
 import de.emotechat.addon.gui.chat.render.EmoteChatLine;
 import de.emotechat.addon.gui.chat.render.EmoteChatRenderer;
+import de.emotechat.addon.gui.chat.render.EmoteChatRendererType;
 import dev.l3g7.griefer_utils.core.api.reflection.Reflection;
 import net.labymod.ingamechat.renderer.ChatLine;
 import net.labymod.ingamechat.renderer.ChatRenderer;
@@ -40,6 +41,9 @@ public class GUEmoteChatLine extends EmoteChatLine implements GUChatLine {
 	}
 
 	public static ChatLine tryCreatingEmoteChatLine(ChatRenderer emoteChatRenderer, IChatComponent modifiedComponent, IChatComponent originalComponent,  String message, boolean secondChat, String room, Object component, int updateCounter, int chatLineId, Integer highlightColor) {
+		if (!(emoteChatRenderer instanceof EmoteChatRendererType))
+			return null;
+
 		EmoteChatRenderer renderer = Reflection.get(emoteChatRenderer, "renderer");
 		EmoteChatAddon addon = Reflection.get(renderer, "addon");
 		Collection<ChatLineEntry> entries = ChatLineEntry.parseEntries(addon.getEmoteProvider().getIdSplitter(), message);
