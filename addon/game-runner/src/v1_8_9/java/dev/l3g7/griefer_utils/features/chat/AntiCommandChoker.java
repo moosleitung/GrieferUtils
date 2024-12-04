@@ -11,14 +11,13 @@ import dev.l3g7.griefer_utils.core.api.bridges.LabyBridge;
 import dev.l3g7.griefer_utils.core.api.event_bus.EventListener;
 import dev.l3g7.griefer_utils.core.api.file_provider.Singleton;
 import dev.l3g7.griefer_utils.core.api.misc.Constants;
+import dev.l3g7.griefer_utils.core.events.MessageEvent.MessageSendEvent;
 import dev.l3g7.griefer_utils.core.misc.TickScheduler;
-import dev.l3g7.griefer_utils.features.Feature;
 import dev.l3g7.griefer_utils.core.settings.types.HeaderSetting;
 import dev.l3g7.griefer_utils.core.settings.types.StringListSetting;
 import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
-import dev.l3g7.griefer_utils.core.events.MessageEvent.MessageSendEvent;
+import dev.l3g7.griefer_utils.features.Feature;
 import net.labymod.ingamechat.IngameChatManager;
-import net.labymod.ingamechat.renderer.ChatLine;
 import net.labymod.ingamechat.renderer.ChatRenderer;
 import net.minecraft.event.ClickEvent;
 import net.minecraft.init.Blocks;
@@ -82,15 +81,8 @@ public class AntiCommandChoker extends Feature {
 				chatRenderers.add(ICM.getSecond());
 
 				for (ChatRenderer chatRenderer : chatRenderers) {
-					for (ChatLine chatLine : chatRenderer.getChatLines()) {
-						chatRenderer.getChatLines().remove(chatLine);
-						break;
-					}
-
-					for (ChatLine chatLine : chatRenderer.getBackendComponents()) {
-						chatRenderer.getChatLines().remove(chatLine);
-						break;
-					}
+					chatRenderer.getChatLines().removeIf(cl -> cl.getChatLineId() == id);
+					chatRenderer.getBackendComponents().removeIf(cl -> cl.getChatLineId() == id);
 				}
 			}, () -> {
 				mc().ingameGUI.getChatGUI().deleteChatLine(id);
