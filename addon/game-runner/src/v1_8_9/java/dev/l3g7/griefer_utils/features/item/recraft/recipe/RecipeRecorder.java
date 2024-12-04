@@ -145,7 +145,7 @@ public class RecipeRecorder {
 				action.page++;
 				RecraftLogger.log("Increased page to " + action.page);
 			} else {
-				RecraftLogger.log("!!! Forcing shotcut !!!");
+				RecraftLogger.log("!!! Forcing shortcut !!!");
 				if (recording != Recraft.tempRecording)
 					labyBridge.notify("§eWarnung \u26A0", "§eBitte wähle das Item via GrieferGames' Gui aus!");
 			}
@@ -157,6 +157,11 @@ public class RecipeRecorder {
 			return;
 
 		ItemStack variantItem = player().openContainer.getSlot(49).getStack();
+		if (variantItem == null) {
+			labyBridge.notify("§eFehler \u26A0", "§eBitte nehme die Aktion neu auf!");
+			return;
+		}
+
 		String variantString = variantItem.getDisplayName();
 		if (!variantString.equals("§7"))
 			action.variant = Integer.parseInt(variantString.substring(variantString.indexOf(' ') + 1));
