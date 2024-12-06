@@ -231,8 +231,10 @@ public class Calculator extends Feature {
 		if (lastPaymentReceiver != null && msg.startsWith("/bank abheben")) {
 			BigDecimal moneyRequired = lastPayment.subtract(getCurrentBalance()).setScale(0, RoundingMode.CEILING).max(THOUSAND);
 			if (msg.equals(String.format("/bank abheben %d", moneyRequired.toBigInteger())) && autoWithdraw.get() == WithdrawAction.SUGGEST) {
+				String amount = lastPayment.equals(BigDecimal.ZERO) ? "0.001" : lastPayment.stripTrailingZeros().toPlainString();
+
 				// Wait 1 tick (chat screen still open)
-				TickScheduler.runAfterRenderTicks(() -> suggest("/pay %s %s", lastPaymentReceiver, lastPayment.stripTrailingZeros().toPlainString()), 1);
+				TickScheduler.runAfterRenderTicks(() -> suggest("/pay %s %s", lastPaymentReceiver, amount), 1);
 				return;
 			}
 		}
@@ -293,6 +295,7 @@ public class Calculator extends Feature {
 		Matcher matcher = pattern.matcher(msg);
 		if (matcher.find()) {
 			String equation = matcher.group("equation");
+			boolean transactionCommand = msg.toLowerCase().startsWith("/pay") || msg.toLowerCase().startsWith("/bank");
 
 			// Check if equation is empty
 			if (equation.isEmpty()) {
@@ -312,11 +315,12 @@ public class Calculator extends Feature {
 				return true;
 
 			// Replace value
-			msg = msg.substring(0, matcher.start("equation")) + Constants.DECIMAL_FORMAT_98.format(new BigDecimal(expResult).setScale(Math.min(Math.max(decimalPlaces.get(), 0), 98), RoundingMode.HALF_UP)) + msg.substring(matcher.end("equation"));
+			int decPlaces = transactionCommand ? 3 : Math.min(Math.max(decimalPlaces.get(), 0), 98);
+			msg = msg.substring(0, matcher.start("match")) + Constants.DECIMAL_FORMAT_98.format(new BigDecimal(expResult).setScale(decPlaces, RoundingMode.HALF_UP)) + msg.substring(matcher.end("match"));
 
 			// Fix symbols
-			if (msg.toLowerCase().startsWith("/pay") || msg.toLowerCase().startsWith("/bank"))
-				msg = msg.replace(".", "").replace(',', '.');
+			if (transactionCommand)
+				msg = msg.replace(".", "").replace(',', '.').replaceAll(" 0$", " 0.001");
 
 			// Remove the backslash from escaped placeholder letters
 			msg = msg.replaceAll(escapedPlaceholderPattern, "$1");
