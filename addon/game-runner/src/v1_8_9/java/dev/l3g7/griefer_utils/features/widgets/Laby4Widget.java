@@ -46,6 +46,11 @@ import net.labymod.core.client.gui.screen.activity.activities.NavigationActivity
 import net.labymod.core.client.gui.screen.activity.activities.labymod.LabyModActivity;
 import net.labymod.core.client.gui.screen.activity.activities.labymod.child.WidgetsEditorActivity;
 import org.jetbrains.annotations.NotNull;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Comparator;
 import java.util.List;
@@ -232,17 +237,34 @@ public abstract class Laby4Widget extends TextHudWidget<ModuleConfig> implements
 
 	}
 
+	public interface RenderableComponentAccessor {
+		void grieferUtils$setTextLine(CustomRenderTextLine line);
+	}
+
+	@Mixin(value = RenderableComponent.class, remap = false)
+	private static class RenderableComponentMixin implements RenderableComponentAccessor {
+		@Unique
+		private CustomRenderTextLine grieferUtils$textLine = null;
+
+		@Inject(method = "getWidth", at = @At("HEAD"), cancellable = true, remap = false)
+		public void getWidth(CallbackInfoReturnable<Float> cir) {
+			if (grieferUtils$textLine != null)
+				cir.setReturnValue(grieferUtils$textLine.getWidth());
+		}
+
+		@Override
+		public void grieferUtils$setTextLine(CustomRenderTextLine line) {
+			this.grieferUtils$textLine = line;
+		}
+	}
+
 	public static abstract class CustomRenderTextLine extends TextLine {
 
 		public CustomRenderTextLine(TextHudWidget<?> widget) {
 			super(widget, (Component) null, "");
 			// Fix LabyMod using line#renderableComponent#getWidth instead of line#getWidth to calculate x offset
-			this.renderableComponent = new RenderableComponent(null, null, Style.EMPTY, 0, 0, List.of(), 0) {
-				@Override
-				public float getWidth() {
-					return CustomRenderTextLine.this.getWidth();
-				}
-			};
+			renderableComponent = RenderableComponent.of("", null, Style.EMPTY, 0, 0, List.of(), 0);
+			((RenderableComponentAccessor) renderableComponent).grieferUtils$setTextLine(this);
 		}
 
 		@Override
