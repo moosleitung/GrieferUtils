@@ -18,6 +18,7 @@ import dev.l3g7.griefer_utils.core.settings.types.StringListSetting;
 import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
 import dev.l3g7.griefer_utils.features.Feature;
 import net.labymod.ingamechat.IngameChatManager;
+import net.labymod.ingamechat.renderer.ChatLine;
 import net.labymod.ingamechat.renderer.ChatRenderer;
 import net.minecraft.event.ClickEvent;
 import net.minecraft.init.Blocks;
@@ -81,8 +82,19 @@ public class AntiCommandChoker extends Feature {
 				chatRenderers.add(ICM.getSecond());
 
 				for (ChatRenderer chatRenderer : chatRenderers) {
-					chatRenderer.getChatLines().removeIf(cl -> cl.getChatLineId() == id);
-					chatRenderer.getBackendComponents().removeIf(cl -> cl.getChatLineId() == id);
+					for (ChatLine chatLine : chatRenderer.getChatLines()) {
+						if (chatLine.getChatLineId() != id)
+							continue;
+						chatRenderer.getChatLines().remove(chatLine);
+						break;
+					}
+
+					for (ChatLine chatLine : chatRenderer.getBackendComponents()) {
+						if (chatLine.getChatLineId() != id)
+							continue;
+						chatRenderer.getChatLines().remove(chatLine);
+						break;
+					}
 				}
 			}, () -> {
 				mc().ingameGUI.getChatGUI().deleteChatLine(id);
