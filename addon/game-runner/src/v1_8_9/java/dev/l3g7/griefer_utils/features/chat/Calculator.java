@@ -104,10 +104,14 @@ public class Calculator extends Feature {
 	private static final Pattern PAYMENT_COMMAND_PATTERN = Pattern.compile(String.format("/pay (?<recipient>%s|\\*) (?<amount>.+)", Constants.UNFORMATTED_PLAYER_NAME_PATTERN), CASE_INSENSITIVE);
 	private static final BigDecimal THOUSAND = new BigDecimal(1000);
 
-	private static Pattern placeholderPattern = Pattern.compile("(?<!\\\\)(?<match>\\{(?<equation>[^}]*[^\\\\])})");
-	private static String escapedPlaceholderPattern = "\\\\([{}])";
+	private Pattern placeholderPattern;
+	private String escapedPlaceholderPattern = "\\\\([{}])";
 	private BigDecimal lastPayment = BigDecimal.ZERO;
 	private String lastPaymentReceiver;
+
+	private Calculator() {
+		updatePlaceholderPattern();
+	}
 
 	private void updatePlaceholderPattern() {
 		if (placeholderStart.get().isEmpty() || placeholderEnd.get().isEmpty())
@@ -122,11 +126,11 @@ public class Calculator extends Feature {
 		String patternEnd;
 
 		if (placeholderEnd.get().equals("\\"))
-			patternEnd = "\\\\]+)\\\\(?!\\\\)";
+			patternEnd = "\\\\]+)\\\\)(?!\\\\)";
 		else
-			patternEnd = String.format("%s]*[^\\\\])%s", end, end);
+			patternEnd = String.format("%s]*[^\\\\])%s)", end, end);
 
-		placeholderPattern = Pattern.compile(String.format("(?<!\\\\)%s(?<equation>[^%s", start, patternEnd));
+		placeholderPattern = Pattern.compile(String.format("(?<!\\\\)(?<match>%s(?<equation>[^%s", start, patternEnd));
 		escapedPlaceholderPattern = String.format("\\\\(%s|%s)", start, end);
 
 	}
@@ -216,7 +220,7 @@ public class Calculator extends Feature {
 		// Save payment (for auto-withdraw)
 		Matcher paymentMatcher = PAYMENT_COMMAND_PATTERN.matcher(event.message);
 		if (paymentMatcher.matches()) {
-			lastPaymentReceiver = paymentMatcher.group("player");
+			lastPaymentReceiver = paymentMatcher.group("recipient");
 			try {
 				double result = calculate(paymentMatcher.group("amount").replace(",", ""), false);
 				if (!Double.isNaN(result))
