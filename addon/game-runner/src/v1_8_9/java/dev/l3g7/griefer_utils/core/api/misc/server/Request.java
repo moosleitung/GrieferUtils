@@ -9,6 +9,7 @@ package dev.l3g7.griefer_utils.core.api.misc.server;
 
 import com.google.gson.annotations.SerializedName;
 import dev.l3g7.griefer_utils.core.api.BugReporter;
+import dev.l3g7.griefer_utils.core.api.bridges.LabyBridge;
 import dev.l3g7.griefer_utils.core.api.misc.CustomSSLSocketFactoryProvider;
 import dev.l3g7.griefer_utils.core.api.misc.PlayerKeyPair;
 import dev.l3g7.griefer_utils.core.api.misc.ThreadFactory;
@@ -90,11 +91,12 @@ public abstract class Request<R> {
 		if (conn instanceof HttpsURLConnection httpsConn)
 			httpsConn.setSSLSocketFactory(CustomSSLSocketFactoryProvider.getCustomFactory());
 
-		conn.setRequestProperty("Content-Type", "application/json");
+		conn.addRequestProperty("User-Agent", "GrieferUtils v" + LabyBridge.labyBridge.addonVersion() + " | github.com/L3g7/GrieferUtils");
 		if (GUServer.isAvailable())
 			conn.setRequestProperty("Authorization", GUServer.generateAuthHeader());
 
 		if (post) {
+			conn.setRequestProperty("Content-Type", "application/json");
 			conn.setRequestMethod("POST");
 			conn.setDoOutput(true);
 			conn.getOutputStream().write(serialize().getBytes(UTF_8));
