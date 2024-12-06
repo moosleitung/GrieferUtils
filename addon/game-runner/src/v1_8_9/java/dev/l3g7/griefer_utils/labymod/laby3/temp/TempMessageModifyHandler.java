@@ -50,8 +50,9 @@ public class TempMessageModifyHandler {
 
 		@Inject(method = "tagComponent", at = @At("RETURN"), cancellable = true)
 		private static void injectTagComponent(Object chatComponent, CallbackInfoReturnable<Object> cir) {
+			IChatComponent original = unmodifiedChatComponents.remove(new ComponentHash(grieferUtils$currentComponent));
 			cir.setReturnValue(((LabyBridgeImpl) labyBridge).messageModifyConsumer
-				.apply(unmodifiedChatComponents.get(new ComponentHash(grieferUtils$currentComponent)), cir.getReturnValue()));
+				.apply(original == null ? chatComponent : original, cir.getReturnValue()));
 		}
 
 	}
