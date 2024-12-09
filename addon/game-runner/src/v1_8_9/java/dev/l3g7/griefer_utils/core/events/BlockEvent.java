@@ -43,7 +43,7 @@ public class BlockEvent extends Event {
 			@Redirect(method = "rightClickMouse", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/PlayerControllerMP;onPlayerRightClick(Lnet/minecraft/client/entity/EntityPlayerSP;Lnet/minecraft/client/multiplayer/WorldClient;Lnet/minecraft/item/ItemStack;Lnet/minecraft/util/BlockPos;Lnet/minecraft/util/EnumFacing;Lnet/minecraft/util/Vec3;)Z"))
 			public boolean redirectPlayerRightClick(PlayerControllerMP instance, EntityPlayerSP player, WorldClient worldIn, ItemStack heldStack, BlockPos hitPos, EnumFacing side, Vec3 hitVec) {
 				if (new BlockInteractEvent(hitPos).fire().isCanceled())
-					return false;
+					return true;
 
 				return instance.onPlayerRightClick(player, worldIn, heldStack, hitPos, side, hitVec);
 			}
