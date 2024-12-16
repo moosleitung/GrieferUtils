@@ -14,6 +14,7 @@ import com.github.lunatrius.schematica.world.schematic.SchematicFormat;
 import dev.l3g7.griefer_utils.core.api.misc.Constants;
 import dev.l3g7.griefer_utils.core.api.reflection.Reflection;
 import dev.l3g7.griefer_utils.core.api.util.LambdaUtil;
+import dev.l3g7.griefer_utils.core.util.SchematicaUtil;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.nbt.NBTTagCompound;
@@ -92,7 +93,7 @@ public class SaveSchematicaPosition {
 		if (position == null || !isSavePositionEnabled())
 			ClientProxy.moveSchematicToPlayer(schematicWorld);
 		else
-			schematicWorld.position.set(position);
+			Reflection.invoke(SchematicaUtil.getPosition(), "set", position);
 	}
 
 	private static void onPreSchematicSaveEvent(PreSchematicSaveEvent event) {
@@ -100,9 +101,9 @@ public class SaveSchematicaPosition {
 			return;
 
 		NBTTagCompound posNbt = new NBTTagCompound();
-		posNbt.setInteger("x", schematicWorld.position.field_177962_a);
-		posNbt.setInteger("y", schematicWorld.position.field_177960_b);
-		posNbt.setInteger("z", schematicWorld.position.field_177961_c);
+		posNbt.setInteger("x", SchematicaUtil.getPosition().getX());
+		posNbt.setInteger("y", SchematicaUtil.getPosition().getY());
+		posNbt.setInteger("z", SchematicaUtil.getPosition().getZ());
 		event.extendedMetadata.setTag("griefer_utils_position_data", posNbt);
 		schematicWorld = null;
 	}

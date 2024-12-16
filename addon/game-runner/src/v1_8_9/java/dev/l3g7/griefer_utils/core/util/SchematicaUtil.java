@@ -11,6 +11,7 @@ import com.github.lunatrius.schematica.Schematica;
 import com.github.lunatrius.schematica.api.ISchematic;
 import com.github.lunatrius.schematica.client.renderer.RenderSchematic;
 import com.github.lunatrius.schematica.proxy.ClientProxy;
+import dev.l3g7.griefer_utils.core.api.reflection.Reflection;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.MovingObjectPosition;
@@ -36,7 +37,7 @@ public class SchematicaUtil {
 	}
 
 	public static BlockPos getPosition() {
-		return schematic.position;
+		return Reflection.get(schematic, "position");
 	}
 
 	public static boolean dontRender() {
@@ -44,7 +45,7 @@ public class SchematicaUtil {
 	}
 
 	public static boolean shouldLayerBeRendered(int y) {
-		return !schematic.isRenderingLayer || schematic.renderingLayer + schematic.position.field_177960_b == y;
+		return !schematic.isRenderingLayer || schematic.renderingLayer + getPosition().getY() == y;
 	}
 
 	public static void refresh() {
