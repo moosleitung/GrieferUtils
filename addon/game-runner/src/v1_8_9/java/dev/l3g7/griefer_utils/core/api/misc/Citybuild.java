@@ -98,7 +98,7 @@ public enum Citybuild implements Named {
 		}
 
 		String cb = MinecraftUtil.getServerFromScoreboard();
-		if (cb.equals("Portal") || cb.equals("Lobby")) {
+		if (cb.equals("Portal")) {
 			LabyBridge.display(Constants.ADDON_PREFIX + "§fBitte betrete einen Citybuild.");
 			return;
 		}
