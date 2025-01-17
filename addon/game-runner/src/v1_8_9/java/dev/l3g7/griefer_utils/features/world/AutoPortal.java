@@ -15,9 +15,12 @@ import com.sun.jna.platform.win32.WinUser;
 import dev.l3g7.griefer_utils.core.api.event_bus.EventListener;
 import dev.l3g7.griefer_utils.core.api.event_bus.Priority;
 import dev.l3g7.griefer_utils.core.api.file_provider.Singleton;
+import dev.l3g7.griefer_utils.core.api.misc.Citybuild;
 import dev.l3g7.griefer_utils.core.api.reflection.Reflection;
+import dev.l3g7.griefer_utils.core.events.MessageEvent.MessageReceiveEvent;
 import dev.l3g7.griefer_utils.core.events.annotation_events.OnStartupComplete;
 import dev.l3g7.griefer_utils.core.events.network.ServerEvent;
+import dev.l3g7.griefer_utils.core.settings.types.CitybuildSetting;
 import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
 import dev.l3g7.griefer_utils.features.Feature;
 import net.labymod.api.Laby;
@@ -36,6 +39,12 @@ import static dev.l3g7.griefer_utils.core.util.MinecraftUtil.send;
 @Singleton
 public class AutoPortal extends Feature {
 
+	private boolean joined = false;
+
+	private final CitybuildSetting citybuild = CitybuildSetting.create()
+		.name("Citybuild")
+		.description("Welcher Citybuild betreten werden soll.");
+
 	private final SwitchSetting join = SwitchSetting.create()
 		.name("/portal beim Start")
 		.description("Betritt automatisch GrieferGames, sobald Minecraft gestartet wurde.")
@@ -51,7 +60,7 @@ public class AutoPortal extends Feature {
 		.name("Automatisch /portal")
 		.description("Betritt automatisch den Portalraum.")
 		.icon("portal")
-		.subSettings(join, maximize);
+		.subSettings(citybuild, join, maximize);
 
 	public void init() {
 		super.init();
@@ -65,7 +74,31 @@ public class AutoPortal extends Feature {
 
 	@EventListener(priority = Priority.HIGH)
 	public void onServerJoin(ServerEvent.GrieferGamesJoinEvent event) {
-		send("/portal");
+		if (citybuild.get() == Citybuild.ANY) {
+			joined = true;
+			send("/portal");
+			return;
+		}
+
+		joined = false;
+
+		new Thread(() -> {
+			try {
+				Thread.sleep(1000L);
+
+				if (!joined)
+					send("/switch " + citybuild.get().getInternalName());
+
+			} catch (InterruptedException ignored) {}
+		}).start();
+	}
+
+	@EventListener
+	public void onChatMessage(MessageReceiveEvent event) {
+		if (!joined && event.message.getUnformattedText().equals("[GGAuth] Du wurdest erfolgreich verifiziert.")) {
+			joined = true;
+			send("/switch " + citybuild.get().getInternalName());
+		}
 	}
 
 	@OnStartupComplete
