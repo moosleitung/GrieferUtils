@@ -97,6 +97,11 @@ public class ItemCounter extends ItemInfo.ItemInfoSupplier {
 		if (playerAmount + containerAmount == itemStack.stackSize)
 			return Collections.emptyList();
 
+		if (containerName != null && containerName.startsWith("§0Lager: §6")) {
+			containerAmount += Long.parseLong(containerName.substring("§0Lager: §6".length()).replace(".", ""));
+			containerName = "Unendliches Lager";
+		}
+
 		int stackSize = itemStack.getMaxStackSize();
 		// Add to tooltip
 		List<String> toolTip = new ArrayList<>();
