@@ -40,9 +40,7 @@ public class BetterHomeMenu extends Feature {
 			if (stack == null || !stack.getDisplayName().startsWith("§6Home"))
 				continue;
 
-			ItemUtil.getLoreAtIndex(stack, 1);
 			String citybuild = ItemUtil.getLoreAtIndex(stack, 1).substring("§7Citybuild: §e".length());
-
 			ItemStack cbStack = Citybuild.getCitybuild(citybuild).toItemStack();
 			stack.setItem(cbStack.getItem());
 			stack.setItemDamage(cbStack.getItemDamage());
