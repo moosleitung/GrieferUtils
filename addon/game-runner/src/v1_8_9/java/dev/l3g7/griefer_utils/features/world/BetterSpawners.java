@@ -13,9 +13,12 @@ import dev.l3g7.griefer_utils.core.api.file_provider.Singleton;
 import dev.l3g7.griefer_utils.core.api.reflection.Reflection;
 import dev.l3g7.griefer_utils.core.events.GuiScreenEvent.GuiOpenEvent;
 import dev.l3g7.griefer_utils.core.events.ItemUseEvent;
+import dev.l3g7.griefer_utils.core.events.MessageEvent.MessageReceiveEvent;
 import dev.l3g7.griefer_utils.core.events.TileEntityDataSetEvent;
+import dev.l3g7.griefer_utils.core.events.network.PacketEvent.PacketSendEvent;
 import dev.l3g7.griefer_utils.core.events.network.ServerEvent.ServerSwitchEvent;
 import dev.l3g7.griefer_utils.core.misc.ServerCheck;
+import dev.l3g7.griefer_utils.core.misc.TickScheduler;
 import dev.l3g7.griefer_utils.core.misc.Vec3d;
 import dev.l3g7.griefer_utils.core.misc.gui.elements.laby_polyfills.DrawUtils;
 import dev.l3g7.griefer_utils.core.settings.types.HeaderSetting;
@@ -41,6 +44,7 @@ import net.minecraft.init.Items;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.client.C08PacketPlayerBlockPlacement;
+import net.minecraft.network.play.client.C0DPacketCloseWindow;
 import net.minecraft.network.play.client.C0EPacketClickWindow;
 import net.minecraft.tileentity.MobSpawnerBaseLogic;
 import net.minecraft.tileentity.TileEntity;
@@ -68,6 +72,8 @@ public class BetterSpawners extends Feature implements RenderObjectGenerator {
 
 	private BlockPos lastClickedSpawner = null;
 	private BlockPos lastOpenedSpawner = null;
+
+	private int itemMoveOrigin = -1;
 
 	private final SwitchSetting spawnerWithHeldItemFix = SwitchSetting.create()
 		.name("Spawner mit Item öffnen")
@@ -124,7 +130,7 @@ public class BetterSpawners extends Feature implements RenderObjectGenerator {
 	// Spawner with held item fix
 
 	@EventListener
-	private void onPacketSend(ItemUseEvent.Pre event) {
+	private void onItemUsePre(ItemUseEvent.Pre event) {
 		if (!ServerCheck.isOnGrieferGames() || player().isSneaking())
 			return;
 
@@ -142,22 +148,68 @@ public class BetterSpawners extends Feature implements RenderObjectGenerator {
 		if (!spawnerWithHeldItemFix.get() || event.stack == null)
 			return;
 
-		if (FileProvider.getBridge(TempItemSaverBridge.class).isProtected(event.stack)) {
+		if (FileProvider.getBridge(TempItemSaverBridge.class).isProtectedAgainstItemPickup(event.stack)) {
 			labyBridge.notify("§cItemSaver", "§cDas Item in deiner Hand ist im ItemSaver!");
 			return;
 		}
 
 		event.cancel();
+		for (int i = 0; i < player().inventory.mainInventory.length; i++) {
+			if (player().inventory.getStackInSlot(i) == null) {
+				itemMoveOrigin = i;
+				break;
+			}
+		}
 
-		click(event.stack);
+		if (itemMoveOrigin == -1) {
+			labyBridge.notify("§eSpawner verbessern", "§eDein Inventar ist voll!");
+			return;
+		}
+
+		move(false);
 		mc().getNetHandler().addToSendQueue(new C08PacketPlayerBlockPlacement(event.pos, event.side.getIndex(), null, event.hitX, event.hitY, event.hitZ));
-		click(null);
 	}
 
-	private void click(ItemStack itemstack) {
+	private void move(boolean toHotbar) {
+		if (itemMoveOrigin < 9)
+			itemMoveOrigin += 36;
+
+		int hotbarSlot = player().inventory.currentItem;
 		short transactionID = player().openContainer.getNextTransactionID(player().inventory);
-		int slotId = player().inventory.currentItem + 36;
-		mc().getNetHandler().addToSendQueue(new C0EPacketClickWindow(0, slotId, 0, 0, itemstack, transactionID));
+		mc().getNetHandler().addToSendQueue(new C0EPacketClickWindow(0, itemMoveOrigin, hotbarSlot, 2, null, transactionID));
+
+		if (itemMoveOrigin >= 36)
+			itemMoveOrigin -= 36;
+
+		if (!toHotbar) {
+			ItemStack stack = player().inventory.getStackInSlot(hotbarSlot);
+			player().inventory.setInventorySlotContents(itemMoveOrigin, stack);
+			player().inventory.setInventorySlotContents(hotbarSlot, null);
+			return;
+		}
+
+		ItemStack originStack = player().inventory.getStackInSlot(itemMoveOrigin);
+		ItemStack slotStack = player().inventory.getStackInSlot(hotbarSlot);
+		player().inventory.setInventorySlotContents(hotbarSlot, originStack);
+		player().inventory.setInventorySlotContents(itemMoveOrigin, slotStack);
+		itemMoveOrigin = -1;
+	}
+
+	@EventListener
+	private void onMessageReceive(MessageReceiveEvent event) {
+		if (itemMoveOrigin != -1 && event.message.getFormattedText().startsWith("§r§8[§r§6GrieferGames§r§8] §r§cDer Spawner ist aktuell von §r§e"))
+			move(true);
+	}
+
+	@EventListener
+	private void onGuiClose(PacketSendEvent<C0DPacketCloseWindow> e) {
+		if (itemMoveOrigin == -1)
+			return;
+
+		TickScheduler.runAfterRenderTicks(() -> {
+			if (itemMoveOrigin != -1)
+				move(true);
+		}, 1);
 	}
 
 	// Mark last opened spawner
