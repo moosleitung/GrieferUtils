@@ -30,7 +30,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class IOUtil {
 
-	public static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+	public static final Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
 	public static final JsonParser jsonParser = new JsonParser();
 
 	/**
