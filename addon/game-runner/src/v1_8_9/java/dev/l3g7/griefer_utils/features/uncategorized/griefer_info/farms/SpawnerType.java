@@ -22,8 +22,6 @@ public class SpawnerType {
 			public boolean isCobblestone() {
 				return true;
 			}
-
-			{ setId("qj202x5w"); } // Cobblestone's id is missing from the metadata response :/
 		});
 		add("Creeper", "Creeper");
 		add("Dorfbewohner", "Villager");
@@ -57,6 +55,7 @@ public class SpawnerType {
 		add("Wolf", "Wolf");
 		add("Zombie", "Zombie");
 		add("Zombie Pigman", "PigZombie");
+		add("Kreatur", "Mob");
 	}
 
 	private static void add(String name, String translationKey) {
