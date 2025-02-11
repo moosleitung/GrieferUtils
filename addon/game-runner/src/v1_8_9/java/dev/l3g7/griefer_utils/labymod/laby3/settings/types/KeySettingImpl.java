@@ -61,6 +61,7 @@ public class KeySettingImpl extends ControlElement implements Laby3Setting<KeySe
 		previewField.setText("NONE");
 		previewField.setCursorPositionEnd();
 		previewField.setFocused(false);
+		setSettingEnabled(true);
 		EventRegisterer.register(this);
 	}
 
