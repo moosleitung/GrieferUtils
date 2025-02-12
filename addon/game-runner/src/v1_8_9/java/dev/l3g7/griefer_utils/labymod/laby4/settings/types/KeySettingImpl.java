@@ -19,11 +19,19 @@ import dev.l3g7.griefer_utils.core.events.InputEvent.MouseInputEvent;
 import dev.l3g7.griefer_utils.core.settings.types.KeySetting;
 import dev.l3g7.griefer_utils.labymod.laby4.settings.AbstractSettingImpl;
 import net.labymod.api.client.component.Component;
+import net.labymod.api.client.gui.mouse.MutableMouse;
+import net.labymod.api.client.gui.screen.key.InputType;
 import net.labymod.api.client.gui.screen.key.Key;
+import net.labymod.api.client.gui.screen.key.MouseButton;
 import net.labymod.api.client.gui.screen.widget.Widget;
 import net.labymod.api.client.gui.screen.widget.widgets.input.MultiKeybindWidget;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -54,13 +62,13 @@ public class KeySettingImpl extends AbstractSettingImpl<KeySetting, Set<Integer>
 
 	@Override
 	protected Widget[] createWidgets() {
-		MultiKeybindWidget widget = new MultiKeybindWidget(v -> this.set(Arrays.stream(v).map(Key::getId).collect(Collectors.toSet())));
+		MultiKeybindWidget widget = new MultiKeybindWidget(v -> this.set(Arrays.stream(v).map(k -> k instanceof MouseButton ? -k.getId() : k.getId()).collect(Collectors.toSet())));
 		widget.placeholder(placeholder);
-		widget.setKeys(get().stream().map(Key::get).collect(Collectors.toSet()));
+		widget.setKeys(get().stream().map(KeySettingImpl::getKey).collect(Collectors.toSet()));
 		callback(newValue -> {
 			Set<Key> keys = widget.getKeys();
 			keys.clear();
-			get().stream().map(Key::get).forEach(keys::add);
+			get().stream().map(KeySettingImpl::getKey).forEach(keys::add);
 		});
 
 		return new Widget[]{widget};
@@ -92,7 +100,7 @@ public class KeySettingImpl extends AbstractSettingImpl<KeySetting, Set<Integer>
 
 	@EventListener
 	public void onGuiMousePress(GuiScreenEvent.MouseInputEvent.Post event) {
-		if (triggersInContainers)
+		if (Mouse.getEventButtonState() && triggersInContainers)
 			onPress(-Mouse.getEventButton());
 	}
 
@@ -112,8 +120,29 @@ public class KeySettingImpl extends AbstractSettingImpl<KeySetting, Set<Integer>
 		if (!get().contains(code))
 			return;
 
-		pressed = get().stream().allMatch(i -> Key.get(i).isPressed());
+		pressed = get().stream().allMatch(i -> getKey(i).isPressed());
 		pressCallbacks.forEach(c -> c.accept(pressed));
+	}
+
+	private static Key getKey(int i) {
+		return i < 0 ? MouseButton.get(-i) : Key.get(i);
+	}
+
+	@Mixin(value = MultiKeybindWidget.class,  remap = false)
+	private static abstract class MixinMultiKeybindWidget {
+
+		@Shadow
+		abstract boolean keyPressed(Key key, InputType type);
+
+		@Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
+		private void injectMouseClicked(MutableMouse mouse, MouseButton mouseButton, CallbackInfoReturnable<Boolean> cir) {
+			if (!mouseButton.getActualName().startsWith("M"))
+				return;
+
+			this.keyPressed(mouseButton, InputType.ACTION);
+			cir.setReturnValue(true);
+		}
+
 	}
 
 }
