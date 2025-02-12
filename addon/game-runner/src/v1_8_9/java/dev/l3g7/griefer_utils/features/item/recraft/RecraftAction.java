@@ -30,7 +30,7 @@ public abstract class RecraftAction {
 		public final int meta;
 
 		public static Ingredient fromItemStack(ItemStack stack) {
-			if (stack == null || stack.isItemStackDamageable())
+			if (stack == null)
 				return null;
 
 			if (!EnchantmentHelper.getEnchantments(stack).isEmpty())
