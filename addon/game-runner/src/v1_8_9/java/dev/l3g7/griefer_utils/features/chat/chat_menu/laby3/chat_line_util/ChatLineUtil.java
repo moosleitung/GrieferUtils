@@ -141,7 +141,7 @@ public class ChatLineUtil {
 
 		@ModifyArg(method = "handleChat", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiNewChat;printChatMessage(Lnet/minecraft/util/IChatComponent;)V"))
 		private IChatComponent injectTagComponent(IChatComponent chatComponent) {
-			unmodifiedChatComponents.put(new ComponentHash(chatComponent), grieferUtils$currentComponent);
+			unmodifiedChatComponents.put(new ComponentHash(chatComponent), grieferUtils$currentComponent.createCopy());
 			return chatComponent;
 		}
 
