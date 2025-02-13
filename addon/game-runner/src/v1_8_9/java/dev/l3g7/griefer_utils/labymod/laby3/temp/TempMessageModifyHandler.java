@@ -78,10 +78,10 @@ public class TempMessageModifyHandler {
 	}
 
 	/**
-	 * Wrapped around IChatComponent to use identity hash codes instead of IChatComponent's hashCode method.
+	 * Wrapper around IChatComponent to use identity hash codes instead of IChatComponent's hashCode method.
 	 */
 	@ExclusiveTo(LABY_3)
-	private static class ComponentHash {
+	public static class ComponentHash {
 
 		private final IChatComponent component;
 

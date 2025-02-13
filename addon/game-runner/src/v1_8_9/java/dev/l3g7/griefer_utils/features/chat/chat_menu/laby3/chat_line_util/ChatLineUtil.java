@@ -11,6 +11,7 @@ import dev.l3g7.griefer_utils.core.api.bridges.Bridge.ExclusiveTo;
 import dev.l3g7.griefer_utils.core.api.misc.Constants;
 import dev.l3g7.griefer_utils.core.api.misc.Pair;
 import dev.l3g7.griefer_utils.core.api.reflection.Reflection;
+import dev.l3g7.griefer_utils.labymod.laby3.temp.TempMessageModifyHandler.ComponentHash;
 import net.labymod.core_implementation.mc18.gui.GuiChatAdapter;
 import net.labymod.ingamechat.IngameChatManager;
 import net.labymod.ingamechat.renderer.ChatLine;
@@ -18,16 +19,21 @@ import net.labymod.ingamechat.renderer.ChatRenderer;
 import net.labymod.utils.manager.TagManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiUtilRenderComponents;
+import net.minecraft.client.network.NetHandlerPlayClient;
+import net.minecraft.network.play.server.S02PacketChat;
 import net.minecraft.util.IChatComponent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import static dev.l3g7.griefer_utils.core.api.bridges.Bridge.Version.LABY_3;
 import static dev.l3g7.griefer_utils.core.util.MinecraftUtil.mc;
@@ -70,7 +76,7 @@ public class ChatLineUtil {
 		return null;
 	}
 
-	public static ChatLine generateChatLine(ChatRenderer instance, IChatComponent modifiedComponent, IChatComponent originalComponent,  String message, boolean secondChat, String room, Object component, int updateCounter, int chatLineId, Integer highlightColor) {
+	public static ChatLine generateChatLine(ChatRenderer instance, IChatComponent modifiedComponent, IChatComponent originalComponent, String message, boolean secondChat, String room, Object component, int updateCounter, int chatLineId, Integer highlightColor) {
 		if (Constants.EMOTECHAT) {
 			ChatLine line = GUEmoteChatLine.tryCreatingEmoteChatLine(instance, modifiedComponent, originalComponent, message, secondChat, room, component, updateCounter, chatLineId, highlightColor);
 			if (line != null)
@@ -104,9 +110,39 @@ public class ChatLineUtil {
 
 		@Redirect(method = "setChatLine", at = @At(value = "INVOKE", target = "Lnet/labymod/ingamechat/renderer/ChatRenderer;addChatLine(Ljava/lang/String;ZLjava/lang/String;Ljava/lang/Object;IILjava/lang/Integer;Z)V"))
 		public void redirectAddLine(ChatRenderer instance, String message, boolean secondChat, String room, Object component, int updateCounter, int chatLineId, Integer highlightColor, boolean refresh) {
-			instance.getChatLines().add(0, generateChatLine(instance, grieferUtils$modifiedComponent, grieferUtils$unmodifiedComponent, message, secondChat, room, component, updateCounter, chatLineId, highlightColor));
+			IChatComponent unmodifiedComponent = unmodifiedChatComponents.remove(new ComponentHash(grieferUtils$unmodifiedComponent));
+			if (unmodifiedComponent == null)
+				unmodifiedComponent = grieferUtils$unmodifiedComponent;
+
+			instance.getChatLines().add(0, generateChatLine(instance, grieferUtils$modifiedComponent, unmodifiedComponent, message, secondChat, room, component, updateCounter, chatLineId, highlightColor));
 			if (!refresh)
 				Reflection.set(instance, "animationShift", System.currentTimeMillis());
+		}
+
+	}
+
+	private static final LinkedHashMap<ComponentHash, IChatComponent> unmodifiedChatComponents = new LinkedHashMap<>() {
+		protected boolean removeEldestEntry(Map.Entry<ComponentHash, IChatComponent> eldest) {
+			return size() > 100;
+		}
+	};
+
+	@ExclusiveTo(LABY_3)
+	@Mixin(NetHandlerPlayClient.class)
+	private static class NetHandlerPlayClientMixin { // TODO merge with TempMessageModifyHandler
+
+		@Unique
+		private IChatComponent grieferUtils$currentComponent;
+
+		@Inject(method = "handleChat", at = @At("HEAD"))
+		private void injectTagComponent(S02PacketChat packet, CallbackInfo ci) {
+			grieferUtils$currentComponent = packet.getChatComponent();
+		}
+
+		@ModifyArg(method = "handleChat", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiNewChat;printChatMessage(Lnet/minecraft/util/IChatComponent;)V"))
+		private IChatComponent injectTagComponent(IChatComponent chatComponent) {
+			unmodifiedChatComponents.put(new ComponentHash(chatComponent), grieferUtils$currentComponent);
+			return chatComponent;
 		}
 
 	}
