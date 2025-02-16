@@ -46,12 +46,6 @@ public class EasyPlace extends Feature {
 		new SideRenderer(new Vec3i[] {new Vec3i(1, 0, 0), new Vec3i(1, 1, 0), new Vec3i(0, 1, 0)})  // Z
 	};
 
-	private static final int[][] selectionIndices = new int[][]{
-		new int[] {3, 1, 0, 2, 0, 0}, // X
-		new int[] {0, 0, 0, 2, 3, 1}, // Y
-		new int[] {0, 2, 0, 0, 3, 1}  // Z
-	};
-
 	public static void onBlockPlaceStart() {
 		if (!enabled || selectedFacing == null)
 			return;
@@ -125,13 +119,6 @@ public class EasyPlace extends Feature {
 				return value;
 
 		throw new IllegalStateException("Selection extraction failed");
-	}
-
-	static int getSelectionIndex(EnumFacing origin, EnumFacing target) {
-		if (origin.getAxis() == target.getAxis())
-			return 4;
-
-		return selectionIndices[origin.getAxis().ordinal()][target.ordinal()];
 	}
 
 	@Mixin(Minecraft.class)
