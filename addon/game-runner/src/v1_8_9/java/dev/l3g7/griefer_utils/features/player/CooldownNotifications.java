@@ -11,14 +11,13 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dev.l3g7.griefer_utils.core.api.bridges.LabyBridge;
 import dev.l3g7.griefer_utils.core.api.event_bus.EventListener;
-import dev.l3g7.griefer_utils.core.api.event_bus.Priority;
 import dev.l3g7.griefer_utils.core.api.file_provider.Singleton;
 import dev.l3g7.griefer_utils.core.api.misc.Constants;
 import dev.l3g7.griefer_utils.core.api.misc.config.Config;
-import dev.l3g7.griefer_utils.core.api.reflection.Reflection;
 import dev.l3g7.griefer_utils.core.events.MessageEvent.MessageReceiveEvent;
-import dev.l3g7.griefer_utils.core.events.TickEvent;
+import dev.l3g7.griefer_utils.core.events.TickEvent.ClientTickEvent;
 import dev.l3g7.griefer_utils.core.events.griefergames.CitybuildJoinEvent;
+import dev.l3g7.griefer_utils.core.events.network.PacketEvent.PacketReceiveEvent;
 import dev.l3g7.griefer_utils.core.events.network.ServerEvent.GrieferGamesJoinEvent;
 import dev.l3g7.griefer_utils.core.misc.ChatQueue;
 import dev.l3g7.griefer_utils.core.misc.ServerCheck;
@@ -27,18 +26,18 @@ import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
 import dev.l3g7.griefer_utils.core.util.ItemUtil;
 import dev.l3g7.griefer_utils.core.util.PlayerUtil;
 import dev.l3g7.griefer_utils.features.Feature;
-import net.minecraft.client.gui.inventory.GuiChest;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
-import net.minecraft.inventory.IInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.network.play.server.S2DPacketOpenWindow;
+import net.minecraft.network.play.server.S2FPacketSetSlot;
+import net.minecraft.network.play.server.S30PacketWindowItems;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
 import static dev.l3g7.griefer_utils.core.api.bridges.LabyBridge.display;
 import static dev.l3g7.griefer_utils.core.util.MinecraftUtil.*;
@@ -49,11 +48,14 @@ import static java.util.concurrent.TimeUnit.HOURS;
 public class CooldownNotifications extends Feature {
 
 	private static final String TITLE = "§8§m------------§r§8[ §r§6Cooldowns §r§8]§r§8§m------------§r";
-	public final Map<String, Long> endDates = Collections.synchronizedMap(new HashMap<>());
-	private boolean waitingForCooldownGUI = false;
-	private boolean sendCooldowns = false;
-	private CompletableFuture<Void> guiInitBlock = null;
-	public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+	private final Map<String, Long> endDates = Collections.synchronizedMap(new HashMap<>());
+	private boolean cooldownsDisplayed = false;
+
+	private CompletableFuture<Void> chatLock = null;
+	private boolean waitingForCooldownsGui = false;
+	private Integer cooldownsGuiId = null;
+	private int cooldownsGuiSlotCount = 0;
 
 	@MainElement
 	private final SwitchSetting enabled = SwitchSetting.create()
@@ -62,15 +64,18 @@ public class CooldownNotifications extends Feature {
 		.icon(Items.clock)
 		.callback(v -> {
 			// If no data is found, open and close /cooldowns automatically
-			if (v && endDates.isEmpty() && ServerCheck.isOnCitybuild() && !waitingForCooldownGUI) {
-				guiInitBlock = ChatQueue.sendBlocking("/cooldowns", () -> {
+			if (v && endDates.isEmpty() && ServerCheck.isOnCitybuild() && !waitingForCooldownsGui) {
+				chatLock = ChatQueue.sendBlocking("/cooldowns", () -> {
 					LabyBridge.labyBridge.notifyError("Cooldowns konnten nicht geöffnet werden!");
-					resetWaitingForGUI();
+					waitingForCooldownsGui = false;
 				});
-				waitingForCooldownGUI = true;
+				waitingForCooldownsGui = true;
 			}
 		});
 
+	/**
+	 * Parses cooldowns from chat messages.
+	 */
 	@EventListener(triggerWhenDisabled = true)
 	public void onMessageReceive(MessageReceiveEvent event) {
 		if (event.message.getUnformattedText().matches("^Du hast .+-Booster erhalten\\. Danke für deine Unterstützung von GrieferGames!$"))
@@ -89,32 +94,78 @@ public class CooldownNotifications extends Feature {
 		saveCooldowns();
 	}
 
-	@EventListener
-	public void onCBJoin(CitybuildJoinEvent event) {
-		// If no data is found, open and close /cooldowns automatically
-		if (endDates.isEmpty()) {
-			guiInitBlock = ChatQueue.sendBlocking("/cooldowns", () -> {
-				LabyBridge.labyBridge.notifyError("Cooldowns konnten nicht geöffnet werden!");
-				resetWaitingForGUI();
-			});
-			waitingForCooldownGUI = true;
+	/**
+	 * Parses cooldowns from the GUI.
+	 */
+	@EventListener(triggerWhenDisabled = true)
+	public void onGuiOpen(PacketReceiveEvent<S2DPacketOpenWindow> event) {
+		if (event.packet.getWindowTitle().getFormattedText().equals("§6Cooldowns§r")) {
+			cooldownsGuiId = event.packet.getWindowId();
+			cooldownsGuiSlotCount = event.packet.getSlotCount();
+			if (waitingForCooldownsGui) {
+				waitingForCooldownsGui = false;
+				event.cancel();
+			}
 		}
 	}
 
-	@EventListener(priority = Priority.LOWEST) // Make sure loadCooldowns is triggered before
-	public void onServerJoin(GrieferGamesJoinEvent event) {
-		sendCooldowns = true;
+	@EventListener(triggerWhenDisabled = true)
+	public void onGuiSetSlot(PacketReceiveEvent<S2FPacketSetSlot> event) {
+		if (cooldownsGuiId != null && event.packet.func_149175_c() == cooldownsGuiId)
+			parseAvailability(event.packet.func_149173_d(), event.packet.func_149174_e());
 	}
 
-	@EventListener
-	public void onCitybuildJoin(CitybuildJoinEvent event) {
-		if (!sendCooldowns)
+	@EventListener(triggerWhenDisabled = true)
+	public void onGuiSetSlots(PacketReceiveEvent<S30PacketWindowItems> event) {
+		if (cooldownsGuiId != null && event.packet.func_148911_c() == cooldownsGuiId) {
+			int index = 0;
+			for (ItemStack itemStack : event.packet.getItemStacks())
+				parseAvailability(index++, itemStack);
+		}
+	}
+
+	private void parseAvailability(int slot, ItemStack s) {
+		if (slot > cooldownsGuiSlotCount)
 			return;
 
-		sendCooldowns = false;
+		if (s == null || s.getItem() == Item.getItemFromBlock(Blocks.stained_glass_pane))
+			return;
 
-		// Cooldowns haven't been loaded yet
+		// Load cooldown time from item
+		String name = DrawUtils.removeColor(s.getDisplayName()).replace("-Befehl", "");
+		if (name.startsWith("/clan") || name.equals("Riesige GS (über 25er) überschreiben") || name.equals("Riesige GSe (über 25er) überschreiben"))
+			return;
+
+		endDates.put(name, getAvailability(s));
+		if (chatLock != null)
+			chatLock.complete(null);
+		saveCooldowns();
+	}
+
+	/**
+	 * Automatically opens the GUI in the background if no data is found
+	 */
+	@EventListener
+	public void onCBJoin(CitybuildJoinEvent event) {
+		if (!endDates.isEmpty())
+			return;
+
+		waitingForCooldownsGui = true;
+		chatLock = ChatQueue.sendBlocking("/cooldowns", () -> waitingForCooldownsGui = false);
+	}
+
+	/**
+	 * Announces the current cooldowns when joining the server for the first time.
+	 */
+	@EventListener
+	public void onCitybuildJoin(CitybuildJoinEvent event) {
+		if (cooldownsDisplayed)
+			return;
+
+		cooldownsDisplayed = true;
+
 		if (endDates.size() == 0)
+			// Cooldowns haven't been loaded yet
 			return;
 
 		synchronized (endDates) {
@@ -137,67 +188,24 @@ public class CooldownNotifications extends Feature {
 		display(TITLE);
 	}
 
+	/**
+	 * Announces if a cooldown becomes available.
+	 */
 	@EventListener
-	public void onTick(TickEvent.ClientTickEvent event) {
-		// Display in chat if in game, if not display as achievement
-		Consumer<String> displayFunc = player() != null && world() != null
-			? s -> display(Constants.ADDON_PREFIX + "§e%s ist nun §averfügbar§e!", s)
-			: s -> LabyBridge.labyBridge.notify("Cooldown-Benachrichtigungen", String.format("%s ist nun §averfügbar§e!", s));
-
+	public void onTick(ClientTickEvent event) {
 		// Check if cooldown has become available
 		synchronized (endDates) {
 			for (String command : endDates.keySet()) {
 				if (checkEndTime(command)) {
-					displayFunc.accept(command);
+					if (player() != null && world() != null)
+						display(Constants.ADDON_PREFIX + "§e%s ist nun §averfügbar§e!", command);
+					else
+						LabyBridge.labyBridge.notify("Cooldown-Benachrichtigungen", String.format("%s ist nun §averfügbar§e!", command));
+
 					saveCooldowns();
 				}
 			}
 		}
-	}
-
-	@EventListener
-	public void onTick(TickEvent.RenderTickEvent event) {
-		if (!(mc().currentScreen instanceof GuiChest))
-			return;
-
-		IInventory inventory = Reflection.get(mc().currentScreen, "lowerChestInventory");
-		if (!inventory.getDisplayName().getFormattedText().equals("§6Cooldowns§r"))
-			return;
-
-		if (inventory.getSizeInventory() != 45 || inventory.getStackInSlot(10) == null || inventory.getStackInSlot(10).getItem() != Items.gold_ingot)
-			return;
-
-		// Iterate through slots
-		boolean foundAny = false;
-		for (int i = 0; i < inventory.getSizeInventory(); i++) {
-			ItemStack s = inventory.getStackInSlot(i);
-			if (s == null || s.getItem() == Item.getItemFromBlock(Blocks.stained_glass_pane))
-				continue;
-
-			// Load cooldown time from item
-			String name = DrawUtils.removeColor(s.getDisplayName()).replace("-Befehl", "");
-			if (name.startsWith("/clan") || name.equals("Riesige GSe (über 25er) überschreiben"))
-				continue;
-
-			endDates.put(name, getAvailability(s));
-			foundAny = true;
-		}
-
-		if (!foundAny)
-			return;
-
-		saveCooldowns();
-		// Close cooldowns if waitingForCooldownGUI (was automatically opened)
-		if (waitingForCooldownGUI)
-			resetWaitingForGUI();
-	}
-
-	private void resetWaitingForGUI() {
-		mc().displayGuiScreen(null);
-		guiInitBlock.complete(null);
-		waitingForCooldownGUI = false;
-		sendCooldowns = true;
-		onCitybuildJoin(null);
 	}
 
 	private boolean checkEndTime(String name) {

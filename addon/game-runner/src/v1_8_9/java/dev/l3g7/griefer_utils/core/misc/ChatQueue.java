@@ -38,20 +38,17 @@ public class ChatQueue {
 	private static final List<Triple<String, Future<Void>, Runnable>> blockingMessages = new ArrayList<>();
 	private static int currentQueueDelay = QUEUE_DELAY;
 	private static long lastMessageSentTimestamp = 0; // When the last message was sent. Used for block timeout
-	private static int messagesSentWithoutDelay = 0; // Counter how many messages were sent without chat delay. If >=3, a 60t delay will be forced
 	private static Pair<Future<Void>, Runnable> currentBlock = null;
 
 	@EventListener
 	public void onPacketSend(PacketSendEvent<C01PacketChatMessage> event) {
-		if (blockingMessages.isEmpty()) {
-			messagesSentWithoutDelay = 0;
+		if (blockingMessages.isEmpty())
 			currentQueueDelay = Math.max(QUEUE_DELAY, currentQueueDelay);
-		}
 	}
 
 	@EventListener
 	public void onQuit(ServerEvent.ServerQuitEvent event) {
-		lastMessageSentTimestamp = messagesSentWithoutDelay = 0;
+		lastMessageSentTimestamp = 0;
 		currentBlock = null;
 		queuedMessages.clear();
 		queuedSlowMessages.clear();
@@ -67,23 +64,13 @@ public class ChatQueue {
 			if (currentBlock.getLeft().isDone())
 				currentBlock = null;
 			else {
-				// Show title
-				Minecraft.getMinecraft().ingameGUI.displayTitle("", null, -1, -1, -1);
-				Minecraft.getMinecraft().ingameGUI.displayTitle(null, "§eGrieferUtils wird initialisiert...", -1, -1, -1);
-				Minecraft.getMinecraft().ingameGUI.displayTitle(null, null, 0, 2, 3);
-
-				// Block motion
-				Entity e = Minecraft.getMinecraft().thePlayer;
-				if (e == null)
-					return;
-
-				e.motionX = e.motionY = e.motionZ = 0;
-				e.onGround = true;
-
+				// Drop block if it's taking longer than 2.5s
 				if ((System.currentTimeMillis() - lastMessageSentTimestamp) >= 3000) {
 					currentBlock.getRight().run();
-					currentBlock = null; // Drop block if it's taking longer than 2.5s
+					currentBlock = null;
 				}
+
+				// Block queue
 				return;
 			}
 		}
@@ -92,30 +79,22 @@ public class ChatQueue {
 		if (currentQueueDelay <= 0 && (!queuedMessages.isEmpty() || !queuedSlowMessages.isEmpty() || !blockingMessages.isEmpty()) && player() != null) {
 			String msg;
 			if (!blockingMessages.isEmpty()) { // Prioritize blocking messages
-				++messagesSentWithoutDelay;
 				Triple<String, Future<Void>, Runnable> entry = blockingMessages.remove(0);
 				msg = entry.getLeft();
 				currentBlock = Pair.of(entry.getMiddle(), entry.getRight());
+				currentQueueDelay = QUEUE_DELAY;
 			} else {
 				if (!queuedMessages.isEmpty()) {
 					msg = queuedMessages.remove(0);
-					messagesSentWithoutDelay = 0;
 					currentQueueDelay = QUEUE_DELAY;
 				} else {
 					msg = queuedSlowMessages.remove(0);
-					messagesSentWithoutDelay = 0;
 					currentQueueDelay = 120;
 				}
 			}
 
 			player().sendChatMessage(msg);
 			lastMessageSentTimestamp = System.currentTimeMillis();
-
-			// Force 60t delay if the last 3 messages were without delay
-			if (messagesSentWithoutDelay >= 3) {
-				messagesSentWithoutDelay = 0;
-				currentQueueDelay = 60;
-			}
 		}
 	}
 
@@ -128,7 +107,7 @@ public class ChatQueue {
 	}
 
 	/**
-	 * Sends a message and blocks movement until the future is completed.
+	 * Sends a message and blocks the queue until the future is completed.
 	 */
 	public static CompletableFuture<Void> sendBlocking(String message, Runnable errorMessage) {
 		CompletableFuture<Void> future = new CompletableFuture<>();

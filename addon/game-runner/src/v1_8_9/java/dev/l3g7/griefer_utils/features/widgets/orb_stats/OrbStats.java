@@ -15,11 +15,10 @@ import dev.l3g7.griefer_utils.core.api.bridges.LabyBridge;
 import dev.l3g7.griefer_utils.core.api.event_bus.EventListener;
 import dev.l3g7.griefer_utils.core.api.file_provider.Singleton;
 import dev.l3g7.griefer_utils.core.api.misc.config.Config;
-import dev.l3g7.griefer_utils.core.api.reflection.Reflection;
 import dev.l3g7.griefer_utils.core.events.GuiScreenEvent.GuiOpenEvent;
 import dev.l3g7.griefer_utils.core.events.MessageEvent.MessageReceiveEvent;
-import dev.l3g7.griefer_utils.core.events.TickEvent.ClientTickEvent;
 import dev.l3g7.griefer_utils.core.events.griefergames.CitybuildJoinEvent;
+import dev.l3g7.griefer_utils.core.events.network.PacketEvent.PacketReceiveEvent;
 import dev.l3g7.griefer_utils.core.events.network.ServerEvent.GrieferGamesJoinEvent;
 import dev.l3g7.griefer_utils.core.misc.ChatQueue;
 import dev.l3g7.griefer_utils.core.misc.ServerCheck;
@@ -27,16 +26,17 @@ import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
 import dev.l3g7.griefer_utils.core.util.PlayerUtil;
 import dev.l3g7.griefer_utils.features.Feature.MainElement;
 import dev.l3g7.griefer_utils.features.widgets.Widget.SimpleWidget;
-import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.inventory.GuiChest;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
-import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraft.network.play.server.S2DPacketOpenWindow;
+import net.minecraft.network.play.server.S2FPacketSetSlot;
+import net.minecraft.network.play.server.S30PacketWindowItems;
 
 import java.io.StringReader;
 import java.nio.ByteBuffer;
@@ -50,7 +50,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static dev.l3g7.griefer_utils.core.misc.ServerCheck.isOnGrieferGames;
 import static dev.l3g7.griefer_utils.core.util.MinecraftUtil.mc;
 
 @Singleton
@@ -94,10 +93,13 @@ public class OrbStats extends SimpleWidget {
 
 	private HashMap<Integer, Integer> stats = new HashMap<>();
 	private String lastItem = null;
-	private boolean waitingForGUI = false;
-	private GuiScreen statsRevertScreen = null;
 	private GuiChest lastScreen = null;
-	private CompletableFuture<Void> guiInitBlock = null;
+
+	private CompletableFuture<Void> chatLock = null;
+	private boolean waitingForStatsGui = false;
+	private boolean isOwnStatsGui = false;
+	private Integer statsGuiId = null;
+	private int statsGuiSlotCount = 0;
 
 	@MainElement
 	private final SwitchSetting enabled = SwitchSetting.create()
@@ -106,70 +108,18 @@ public class OrbStats extends SimpleWidget {
 		.icon("blue_graph")
 		.callback(v -> {
 			// If no data is found, open and close /stats automatically
-			if (v && stats.isEmpty() && ServerCheck.isOnCitybuild() && !waitingForGUI) {
-				guiInitBlock = ChatQueue.sendBlocking("/stats", () -> {
+			if (v && stats.isEmpty() && ServerCheck.isOnCitybuild() && !waitingForStatsGui) {
+				chatLock = ChatQueue.sendBlocking("/stats", () -> {
 					LabyBridge.labyBridge.notifyError("Stats konnten nicht geöffnet werden!");
-					resetWaitingForGUI();
+					waitingForStatsGui = false;
 				});
-				waitingForGUI = true;
-				statsRevertScreen = mc().currentScreen;
+				waitingForStatsGui = true;
 			}
 		});
 
-	@Override
-	public String getValue() {
-		return lastItem == null ? "?" : lastItem + ": " + DECIMAL_FORMAT_3.format(stats.get(lastItem.hashCode()));
-	}
-
-	private void resetWaitingForGUI() {
-		guiInitBlock.complete(null);
-		mc().displayGuiScreen(statsRevertScreen);
-		statsRevertScreen = null;
-		waitingForGUI = false;
-	}
-
-	private void saveConfig() {
-		String path = "modules.orb_stats.stats." + mc().getSession().getProfile().getId();
-
-		if (lastItem != null)
-			Config.set(path + ".last", new JsonPrimitive(lastItem));
-		Config.set(path + ".data", new JsonPrimitive(HashMapSerializer.toString(stats)));
-		Config.save();
-	}
-
-	@EventListener(triggerWhenDisabled = true)
-	public void onGuiOpen(GuiOpenEvent<GuiChest> event) {
-		lastScreen = event.gui;
-	}
-
-	@EventListener(triggerWhenDisabled = true)
-	public void loadConfig(GrieferGamesJoinEvent ignored) {
-		lastItem = null;
-		stats.clear();
-
-		String path = "modules.orb_stats.stats." + mc().getSession().getProfile().getId();
-
-		if (Config.has(path + ".last"))
-			lastItem = Config.get(path + ".last").getAsString();
-		if (Config.has(path + ".data"))
-			stats = HashMapSerializer.fromString(Config.get(path + ".data").getAsString());
-	}
-
-	@EventListener
-	public void onCBJoin(CitybuildJoinEvent event) {
-		if (!isOnGrieferGames())
-			return;
-
-		// If no data is found, open and close /stats automatically
-		if (stats.isEmpty()) {
-			guiInitBlock = ChatQueue.sendBlocking("/stats", () -> {
-				LabyBridge.labyBridge.notifyError("Stats konnten nicht geöffnet werden!");
-				resetWaitingForGUI();
-			});
-			waitingForGUI = true;
-		}
-	}
-
+	/**
+	 * Parses stats from selling items.
+	 */
 	@EventListener(triggerWhenDisabled = true)
 	public void onMsgReceive(MessageReceiveEvent event) {
 		Matcher matcher = ORB_SELL_PATTERN.matcher(event.message.getUnformattedText());
@@ -187,42 +137,100 @@ public class OrbStats extends SimpleWidget {
 		// Add the received orbs
 		int addend = Integer.parseInt(matcher.group("amount").replace(".", ""));
 		stats.compute(lastItem.hashCode(), (key, value) -> (value == null ? 0 : value) + addend);
-		saveConfig();
+		saveStats();
 	}
 
 	@EventListener(triggerWhenDisabled = true)
-	public void onTick(ClientTickEvent event) {
-		if (!ServerCheck.isOnCitybuild() || !(mc().currentScreen instanceof GuiChest))
-			return;
-
-		IInventory inv = Reflection.get(mc().currentScreen, "lowerChestInventory");
-
-		// When the players name contains a word that was blacklisted at some point, it is not included in the title
-		if (!inv.getName().equals("§6Statistik von §e" + PlayerUtil.getName()) && !inv.getName().equals("§6Statistik"))
-			return;
-
-		// Check if it's the users stats that are open
-		ItemStack skull = inv.getStackInSlot(10);
-		String uuid = getUUIDFromSkullTexture(skull);
-
-		if (!mc().getSession().getProfile().getId().toString().equalsIgnoreCase(uuid))
-			return;
-
-		// Inv hasn't been loaded yet
-		if (inv.getStackInSlot(42) == null || inv.getStackInSlot(42).getItem() != Items.wheat)
-			return;
-
-		for (int i = 0; i < inv.getSizeInventory(); i++)
-			extractInfo(inv.getStackInSlot(i));
-
-		if (waitingForGUI)
-			resetWaitingForGUI();
-
-		saveConfig();
+	public void onGuiOpen(GuiOpenEvent<GuiChest> event) {
+		lastScreen = event.gui;
 	}
 
-	private void extractInfo(ItemStack stack) {
+	/**
+	 * Parses stats from the GUI.
+	 */
+	@EventListener(triggerWhenDisabled = true)
+	public void onGuiOpen(PacketReceiveEvent<S2DPacketOpenWindow> event) {
+		String invName = event.packet.getWindowTitle().getFormattedText();
+		if (!(invName.equals("§6Statistik§r")
+			|| invName.equals("§6Statistik von §e" + PlayerUtil.getName())
+			|| invName.equals("§6Statistik von §e" + PlayerUtil.getName() + "§r")))
+			return;
+
+		statsGuiId = event.packet.getWindowId();
+		statsGuiSlotCount = event.packet.getSlotCount();
+		isOwnStatsGui = false;
+		if (waitingForStatsGui) {
+			waitingForStatsGui = false;
+			event.cancel();
+		}
+	}
+
+	@EventListener(triggerWhenDisabled = true)
+	public void onGuiSetSlot(PacketReceiveEvent<S2FPacketSetSlot> event) {
+		if (statsGuiId != null && event.packet.func_149175_c() == statsGuiId)
+			extractInfo(event.packet.func_149173_d(), event.packet.func_149174_e());
+	}
+
+	@EventListener(triggerWhenDisabled = true)
+	public void onGuiSetSlots(PacketReceiveEvent<S30PacketWindowItems> event) {
+		if (statsGuiId != null && event.packet.func_148911_c() == statsGuiId) {
+			int index = 0;
+			for (ItemStack itemStack : event.packet.getItemStacks())
+				extractInfo(index++, itemStack);
+		}
+	}
+
+	/**
+	 * Automatically opens the GUI in the background if no data is found
+	 */
+	@EventListener
+	public void onCBJoin(CitybuildJoinEvent event) {
+		if (!stats.isEmpty())
+			return;
+
+		waitingForStatsGui = true;
+		chatLock = ChatQueue.sendBlocking("/stats", () -> waitingForStatsGui = false);
+	}
+
+	@Override
+	public String getValue() {
+		return lastItem == null ? "?" : lastItem + ": " + DECIMAL_FORMAT_3.format(stats.get(lastItem.hashCode()));
+	}
+
+	private void saveStats() {
+		String path = "modules.orb_stats.stats." + mc().getSession().getProfile().getId();
+
+		if (lastItem != null)
+			Config.set(path + ".last", new JsonPrimitive(lastItem));
+		Config.set(path + ".data", new JsonPrimitive(HashMapSerializer.toString(stats)));
+		Config.save();
+	}
+
+	@EventListener(triggerWhenDisabled = true)
+	public void loadStats(GrieferGamesJoinEvent ignored) {
+		lastItem = null;
+		stats.clear();
+
+		String path = "modules.orb_stats.stats." + mc().getSession().getProfile().getId();
+
+		if (Config.has(path + ".last"))
+			lastItem = Config.get(path + ".last").getAsString();
+		if (Config.has(path + ".data"))
+			stats = HashMapSerializer.fromString(Config.get(path + ".data").getAsString());
+	}
+
+	private void extractInfo(int slot, ItemStack stack) {
+		if (slot > statsGuiSlotCount)
+			return;
+
 		if (stack == null || !stack.hasTagCompound())
+			return;
+
+		// Check if the stats are yours
+		if (slot == 10)
+			isOwnStatsGui = mc().getSession().getProfile().getId().toString().equalsIgnoreCase(getUUIDFromSkullTexture(stack));
+
+		if (!isOwnStatsGui)
 			return;
 
 		NBTTagCompound tag = stack.getTagCompound();
@@ -237,8 +245,7 @@ public class OrbStats extends SimpleWidget {
 			if (!matcher.find())
 				continue;
 
-
-			int amount = Integer.parseInt(matcher.group("amount").replace(".",""));
+			int amount = Integer.parseInt(matcher.group("amount").replace(".", ""));
 			if (amount == 0)
 				continue;
 
@@ -254,6 +261,9 @@ public class OrbStats extends SimpleWidget {
 				lastItem = item;
 
 			stats.put(item.hashCode(), amount);
+			if (chatLock != null)
+				chatLock.complete(null);
+			saveStats();
 		}
 	}
 
