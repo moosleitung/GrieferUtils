@@ -37,7 +37,7 @@ public class EasyPlace extends Feature {
 	private final KeySetting main = KeySetting.create()
 		.name("Platzieren vereinfachen")
 		.description("Ermöglicht das Platzieren auf nicht anvisierten Seiten.")
-		.icon("easy_place")
+		.icon("easy_place_overlay")
 		.pressCallback(b -> enabled = b);
 
 	private static final SideRenderer[] sideRenderers = new SideRenderer[] {
