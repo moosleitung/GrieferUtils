@@ -175,6 +175,10 @@
     <td><a href="https://labymod.net">LabyMod asset</a></td>
   </tr>
   <tr>
+    <td><img src="easy_place_overlay.png" height=16em width=16em />&nbsp;&nbsp;<a href="easy_place_overlay.png">easy_place_overlay.png</a></td>
+    <td><a href="https://www.freepik.com/premium-vector/pixel-art-video-game-direction-arrow-button-direction-key-vector-icon-8bit-game_33215958.htm">Freepik (kaleb-silva)</a></td>
+  </tr>
+  <tr>
     <td><img src="explorer.png" height=16em width=16em />&nbsp;&nbsp;<a href="explorer.png">explorer.png</a></td>
     <td><a href="https://www.curseforge.com/minecraft/texture-packs/faithless">Faithless Resource Pack Asset</a></td>
   </tr>
