@@ -28,6 +28,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Vec3;
 import org.apache.commons.lang3.tuple.Pair;
 import org.lwjgl.opengl.GL11;
 
@@ -49,6 +50,7 @@ public class RenderUtil {
 
 	private static final RenderItem itemRender = mc().getRenderItem();
 	private static ScaledResolution scaledResolution = null;
+	private static WorldRenderer wr = null;
 
 	@EventListener(priority = Priority.HIGH)
 	private static void onRenderTick(RenderTickEvent event) {
@@ -57,6 +59,12 @@ public class RenderUtil {
 
 	public static boolean shouldBeCulled(int minY, int maxY) {
 		return maxY < 0 || RenderUtil.scaledResolution.getScaledHeight() < minY;
+	}
+
+	public static Vec3d camPos() {
+		Entity entity = mc().getRenderViewEntity();
+		Vec3d prevPos = new Vec3d(entity.prevPosX, entity.prevPosY, entity.prevPosZ);
+		return prevPos.add(pos(entity).subtract(prevPos).scale(partialTicks()));
 	}
 
 	/**
@@ -86,23 +94,27 @@ public class RenderUtil {
 	}
 
 	public static void drawBoxOutlines(float startX, float startY, float startZ, float endX, float endY, float endZ, Color color, float width) {
+		startLineDrawing(color, width);
+
 		// Lower rectangle
-		drawLine(startX,	startY,	startZ,	startX,	startY,	endZ,	color,	width);
-		drawLine(startX,	startY,	startZ,	endX,	startY,	startZ,	color,	width);
-		drawLine(endX,		startY,	startZ,	endX,	startY,	endZ,	color,	width);
-		drawLine(startX,	startY,	endZ,	endX,	startY,	endZ,	color,	width);
+		drawLineWhenRenderingStarted(startX,	startY,	startZ,	startX,	startY,	endZ);
+		drawLineWhenRenderingStarted(startX,	startY,	startZ,	endX,	startY,	startZ);
+		drawLineWhenRenderingStarted(endX,		startY,	startZ,	endX,	startY,	endZ);
+		drawLineWhenRenderingStarted(startX,	startY,	endZ,	endX,	startY,	endZ);
 
 		// upper rectangle
-		drawLine(startX,	endY,	startZ,	startX,	endY,	endZ,	color,	width);
-		drawLine(startX,	endY,	startZ,	endX,	endY,	startZ,	color,	width);
-		drawLine(endX,		endY,	startZ,	endX,	endY,	endZ,	color,	width);
-		drawLine(startX,	endY,	endZ,	endX,	endY,	endZ,	color,	width);
+		drawLineWhenRenderingStarted(startX,	endY,	startZ,	startX,	endY,	endZ);
+		drawLineWhenRenderingStarted(startX,	endY,	startZ,	endX,	endY,	startZ);
+		drawLineWhenRenderingStarted(endX,		endY,	startZ,	endX,	endY,	endZ);
+		drawLineWhenRenderingStarted(startX,	endY,	endZ,	endX,	endY,	endZ);
 
 		// connecting lines
-		drawLine(startX,	startY,	startZ,	startX,	endY,	startZ,	color,	width);
-		drawLine(startX,	startY,	endZ,	startX,	endY,	endZ,	color,	width);
-		drawLine(endX,		startY,	startZ,	endX,	endY,	startZ,	color,	width);
-		drawLine(endX,		startY,	endZ,	endX,	endY,	endZ,	color,	width);
+		drawLineWhenRenderingStarted(startX,	startY,	startZ,	startX,	endY,	startZ);
+		drawLineWhenRenderingStarted(startX,	startY,	endZ,	startX,	endY,	endZ);
+		drawLineWhenRenderingStarted(endX,		startY,	startZ,	endX,	endY,	startZ);
+		drawLineWhenRenderingStarted(endX,		startY,	endZ,	endX,	endY,	endZ);
+
+		finishLineDrawing();
 	}
 
 	public static void drawLine(BlockPos start, BlockPos end, Color color, float width) {
@@ -110,35 +122,38 @@ public class RenderUtil {
 	}
 
 	public static void drawLine(float startX, float startY, float startZ, float endX, float endY, float endZ, Color color, float width) {
-		Entity entity = mc().getRenderViewEntity();
+		startLineDrawing(color, width);
+		drawLineWhenRenderingStarted(startX, startY, startZ, endX, endY, endZ);
+		finishLineDrawing();
+	}
 
-		// Get cam pos
-		Vec3d prevPos = new Vec3d(entity.prevPosX, entity.prevPosY, entity.prevPosZ);
-
-		Vec3d cam = prevPos.add(pos(entity).subtract(prevPos).scale(partialTicks()));
-
+	public static void startLineDrawing(Color color, float width) {
 		// Update line width
 		GL11.glLineWidth(width);
 		GlStateManager.disableTexture2D();
 
 		// Draw lines
 		begin();
-		WorldRenderer buf = GlEngine.beginWorldDrawing(GL_LINES, DefaultVertexFormats.POSITION);
+		wr = GlEngine.beginWorldDrawing(GL_LINES, DefaultVertexFormats.POSITION);
 		GL11.glColor4f(color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f, color.getAlpha() / 255f);
 
-		buf.pos(startX - cam.x, startY - cam.y, startZ - cam.z).endVertex();
-		buf.pos(endX - cam.x, endY - cam.y, endZ - cam.z).endVertex();
+		GlStateManager.pushMatrix();
+	}
 
+	public static void finishLineDrawing() {
+		GlStateManager.popMatrix();
 		GlEngine.finish();
-
-		// Reset line width
 		GlStateManager.enableTexture2D();
 	}
 
+	public static void drawLineWhenRenderingStarted(float startX, float startY, float startZ, float endX, float endY, float endZ) {
+		Vec3 cam = camPos();
+		wr.pos(startX - cam.xCoord, startY - cam.yCoord, startZ - cam.zCoord).endVertex();
+		wr.pos(endX - cam.xCoord, endY - cam.yCoord, endZ - cam.zCoord).endVertex();
+	}
+
 	public static void drawFilledBox(AxisAlignedBB bb, Color color, boolean drawInside) {
-		Entity entity = mc().getRenderViewEntity();
-		Vec3d prevPos = new Vec3d(entity.prevPosX, entity.prevPosY, entity.prevPosZ);
-		Vec3d cam = prevPos.add(pos(entity).subtract(prevPos).scale(partialTicks()));
+		Vec3d cam = camPos();
 		bb = bb.offset(-cam.x, -cam.y, -cam.z);
 
 		Tessellator tessellator = Tessellator.getInstance();

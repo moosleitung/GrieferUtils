@@ -8,6 +8,7 @@
 package dev.l3g7.griefer_utils.core.misc;
 
 import net.minecraft.util.Vec3;
+import net.minecraft.util.Vec3i;
 
 public class Vec3d extends Vec3 {
 
@@ -46,6 +47,10 @@ public class Vec3d extends Vec3 {
 
 	public Vec3d scale(double factor) {
 		return new Vec3d(x * factor, y * factor, z * factor);
+	}
+
+	public Vec3d mul(Vec3i other) {
+		return new Vec3d(x * other.getX(), y * other.getY(), z * other.getZ());
 	}
 
 	public Vec3d normalize() {

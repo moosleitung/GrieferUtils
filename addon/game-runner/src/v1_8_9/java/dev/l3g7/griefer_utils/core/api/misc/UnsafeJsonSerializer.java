@@ -81,6 +81,9 @@ public class UnsafeJsonSerializer {
 		if (o instanceof ItemStack stack)
 			return new JsonPrimitive(stack.writeToNBT(new NBTTagCompound()).toString());
 
+		if (o instanceof Enum<?> e)
+			return new JsonPrimitive(e.ordinal() + " / " + e.name());
+
 		return serializeUnsafe(o);
 	}
 
