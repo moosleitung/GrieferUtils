@@ -14,6 +14,7 @@ import dev.l3g7.griefer_utils.core.api.reflection.Reflection;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.IChatComponent;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Array;
@@ -61,19 +62,8 @@ public class UnsafeJsonSerializer {
 		if (o instanceof String s)
 			return new JsonPrimitive(s);
 
-		if (o.getClass().isArray())
-			o = arrayToList(o);
-
-		if (o instanceof Iterable<?> it) {
-			JsonArray array = new JsonArray();
-			for (Object itO : it)
-				array.add(toJson0(itO));
-
-			return array;
-		}
-
-		if (o instanceof Map<?,?> m)
-			return toJson0(m.entrySet());
+		if (o instanceof IChatComponent icc)
+			return new JsonPrimitive(IChatComponent.Serializer.componentToJson(icc));
 
 		if (o instanceof IBlockState state)
 			return new JsonPrimitive("<STATE>");
@@ -81,13 +71,6 @@ public class UnsafeJsonSerializer {
 		if (o instanceof ItemStack stack)
 			return new JsonPrimitive(stack.writeToNBT(new NBTTagCompound()).toString());
 
-		if (o instanceof Enum<?> e)
-			return new JsonPrimitive(e.ordinal() + " / " + e.name());
-
-		return serializeUnsafe(o);
-	}
-
-	private JsonElement serializeUnsafe(Object o) {
 		for (int i = 0; i < currentPath.size(); i++) {
 			Object obj = currentPath.get(i);
 			if (obj != o)
@@ -102,6 +85,28 @@ public class UnsafeJsonSerializer {
 		}
 
 		currentPath.add(o);
+
+		if (o.getClass().isArray())
+			o = arrayToList(o);
+
+		if (o instanceof Iterable<?> it) {
+			JsonArray array = new JsonArray();
+			for (Object itO : it)
+				array.add(toJson0(itO));
+
+			return array;
+		}
+
+		if (o instanceof Map<?,?> m)
+			return toJson0(m.entrySet());
+
+		if (o instanceof Enum<?> e)
+			return new JsonPrimitive(e.ordinal() + " / " + e.name());
+
+		return serializeUnsafe(o);
+	}
+
+	private JsonElement serializeUnsafe(Object o) {
 
 		Class<?> clazz = o.getClass();
 		JsonObject result = new JsonObject();

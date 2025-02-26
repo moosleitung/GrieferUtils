@@ -26,8 +26,8 @@ import java.util.List;
 
 class PacketDumper {
 
-	private static final OneSidedPacketDumper incoming = new OneSidedPacketDumper("[INCOMING] ", "Eingehende");
-	private static final OneSidedPacketDumper outgoing = new OneSidedPacketDumper("[OUTGOING] ", "Ausgehende");
+	private static final OneSidedPacketDumper incoming = new OneSidedPacketDumper("[INCOMING] ", "Eingehende", "00,03,19,3E");
+	private static final OneSidedPacketDumper outgoing = new OneSidedPacketDumper("[OUTGOING] ", "Ausgehende", "00,03,04,05,06");
 
 	public static final SwitchSetting enabled = SwitchSetting.create()
 		.name("Packet-Dumper")
@@ -56,7 +56,7 @@ class PacketDumper {
 
 		public final SwitchSetting enabled;
 
-		private OneSidedPacketDumper(String prefix, String settingPrefix) {
+		private OneSidedPacketDumper(String prefix, String settingPrefix, String defaultBlackList) {
 			this.prefix = prefix;
 			this.enabled = SwitchSetting.create()
 				.name(settingPrefix + " Packete dumpen")
@@ -72,6 +72,7 @@ class PacketDumper {
 					StringSetting.create()
 						.name("Blacklist")
 						.description("Die IDs der Packete, die nicht angezeigt werden sollen, getrennt durch \",\".")
+						.defaultValue(defaultBlackList)
 						.icon(Blocks.hopper)
 						.maxLength(Integer.MAX_VALUE)
 						.callback(s -> blacklistList = Arrays.asList(s.split(",")))
