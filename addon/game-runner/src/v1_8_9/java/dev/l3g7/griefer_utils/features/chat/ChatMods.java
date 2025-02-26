@@ -15,6 +15,7 @@ import dev.l3g7.griefer_utils.core.api.file_provider.Singleton;
 import dev.l3g7.griefer_utils.core.api.misc.Named;
 import dev.l3g7.griefer_utils.core.events.MessageEvent.MessageModifyEvent;
 import dev.l3g7.griefer_utils.core.events.MessageEvent.MessageReceiveEvent;
+import dev.l3g7.griefer_utils.core.events.StaticDataReceiveEvent;
 import dev.l3g7.griefer_utils.core.settings.types.DropDownSetting;
 import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
 import dev.l3g7.griefer_utils.core.util.ItemUtil;
@@ -35,21 +36,14 @@ import static dev.l3g7.griefer_utils.core.api.misc.Constants.*;
 @Singleton
 public class ChatMods extends Feature {
 
-	private static final List<String> MYSTERY_MOD_DOWNLOAD_NOTIFICATION = ImmutableList.of(
+	private final List<String> MYSTERY_MOD_DOWNLOAD_NOTIFICATION = ImmutableList.of(
 		"§r§8[§r§6GrieferGames§r§8] §r§cOhje. Du benutzt noch kein MysteryMod!§r",
 		"§r§8[§r§6GrieferGames§r§8] §r§fWir sind optimiert für MysteryMod und die neusten Funktionen hast Du nur damit.§r",
 		"§r§8[§r§6GrieferGames§r§8] §r§fDownload: §r§ahttps://mysterymod.net/download/§r",
 		"§r§8[§r§6GrieferGames§r§8] §r§fWir sind optimiert für MysteryMod. Lade Dir gerne die Mod runter!§r"
 	);
 
-	private static final List<String> COLORED_FONTS = ImmutableList.of(
-		"c6eabd", // rainbow
-		"bbaaeecc", // easter
-		"bae6d5", // summer
-		"33bb", // double blue
-		"66ee787", // halloween
-		"bbffcc" // frost
-	);
+	private List<String> COLORED_FONTS = ImmutableList.of();
 
 	private final SwitchSetting antiClearChat = SwitchSetting.create()
 		.name("Clearchat unterbinden")
@@ -105,6 +99,11 @@ public class ChatMods extends Feature {
 	private boolean isNews = false;
 
 	@EventListener
+	private void onStaticData(StaticDataReceiveEvent event) {
+		COLORED_FONTS = ImmutableList.copyOf(event.data.coloredFonts);
+	}
+
+	@EventListener
 	public void onMessageReceive(MessageReceiveEvent event) {
 		if (shouldCancel(event.message.getFormattedText()))
 			event.cancel();
@@ -115,7 +114,7 @@ public class ChatMods extends Feature {
 		if (!antiColoredFont.get())
 			return;
 
-		for (Pattern pattern : new Pattern[] {GLOBAL_CHAT_PATTERN, GLOBAL_RECEIVE_PATTERN, MESSAGE_RECEIVE_PATTERN, MESSAGE_SEND_PATTERN, PLOTCHAT_RECEIVE_PATTERN}) {
+		for (Pattern pattern : new Pattern[]{GLOBAL_CHAT_PATTERN, GLOBAL_RECEIVE_PATTERN, MESSAGE_RECEIVE_PATTERN, MESSAGE_SEND_PATTERN, PLOTCHAT_RECEIVE_PATTERN}) {
 			Matcher matcher = pattern.matcher(event.original.getFormattedText());
 			if (!matcher.matches())
 				continue;
