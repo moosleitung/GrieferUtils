@@ -290,7 +290,7 @@ public class OrbStats extends SimpleWidget {
 	private static class HashMapSerializer {
 
 		public static String toString(HashMap<Integer, Long> map) {
-			ByteBuffer buf = ByteBuffer.allocate(map.size() * 8);
+			ByteBuffer buf = ByteBuffer.allocate(map.size() * 12);
 
 			for (Map.Entry<Integer, Long> entry : map.entrySet()) {
 				buf.putInt(entry.getKey());
