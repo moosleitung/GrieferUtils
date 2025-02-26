@@ -297,9 +297,9 @@ public class ConfigPatcher {
 			String[] validKeys = new String[]{"/premium", "/ultra", "/kopf", "/grieferboost", "/freekiste", "/startkick"};
 			for (Entry<String, JsonElement> entry : get("player.cooldown_notifications.end_dates").entrySet()) {
 				JsonObject data = entry.getValue().getAsJsonObject();
-				for (String key : new ArrayList<>(data.keySet()))
-					if (Arrays.binarySearch(validKeys, key) < 0)
-						data.remove(key);
+				for (Entry<String, JsonElement> key : new ArrayList<>(data.entrySet()))
+					if (Arrays.binarySearch(validKeys, key.getKey()) < 0)
+						data.remove(key.getKey());
 			}
 
 			JsonObject oldStats = get("modules.orb_stats.stats");
