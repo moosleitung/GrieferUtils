@@ -303,9 +303,9 @@ public class ConfigPatcher {
 			}
 
 			JsonObject oldStats = get("modules.orb_stats.stats");
-			JsonObject newStats = new JsonObject();
 			for (Entry<String, JsonElement> entry : oldStats.entrySet()) {
-				String b64 = entry.getValue().getAsString();
+				JsonObject o = entry.getValue().getAsJsonObject();
+				String b64 = o.get("data").getAsString();
 
 				ByteBuffer buf = ByteBuffer.wrap(Base64.getDecoder().decode(b64));
 				ByteBuffer newBuf = ByteBuffer.allocate(buf.capacity() / 8 * 12);
@@ -315,10 +315,9 @@ public class ConfigPatcher {
 					newBuf.putLong(buf.getInt());
 				}
 
-				newStats.addProperty(entry.getKey(), Base64.getEncoder().encodeToString(buf.array()));
+				o.addProperty("data", Base64.getEncoder().encodeToString(newBuf.array()));
 			}
 
-			set("modules.orb_stats.stats", newStats);
 		}
 	}
 
