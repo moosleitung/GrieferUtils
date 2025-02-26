@@ -115,7 +115,7 @@ public class ChatMods extends Feature {
 		if (!antiColoredFont.get())
 			return;
 
-		for (Pattern pattern : new Pattern[] {GLOBAL_RECEIVE_PATTERN, MESSAGE_RECEIVE_PATTERN, MESSAGE_SEND_PATTERN, PLOTCHAT_RECEIVE_PATTERN}) {
+		for (Pattern pattern : new Pattern[] {GLOBAL_CHAT_PATTERN, GLOBAL_RECEIVE_PATTERN, MESSAGE_RECEIVE_PATTERN, MESSAGE_SEND_PATTERN, PLOTCHAT_RECEIVE_PATTERN}) {
 			Matcher matcher = pattern.matcher(event.original.getFormattedText());
 			if (!matcher.matches())
 				continue;
