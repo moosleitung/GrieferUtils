@@ -25,6 +25,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import static dev.l3g7.griefer_utils.core.util.MinecraftUtil.mc;
+import static dev.l3g7.griefer_utils.core.util.MinecraftUtil.world;
 import static net.minecraft.util.EnumFacing.values;
 
 @Singleton
@@ -63,6 +64,11 @@ public class EasyPlace extends Feature {
 
 		EnumFacing facing = mop.sideHit;
 		BlockPos pos = mop.getBlockPos();
+
+		if (!world().getBlockState(pos).getBlock().isFullCube()) {
+			selectedFacing = null;
+			return;
+		}
 
 		GlStateManager.pushMatrix();
 
