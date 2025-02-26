@@ -19,6 +19,7 @@ import dev.l3g7.griefer_utils.core.events.TickEvent.ClientTickEvent;
 import dev.l3g7.griefer_utils.core.events.griefergames.CitybuildJoinEvent;
 import dev.l3g7.griefer_utils.core.events.network.PacketEvent.PacketReceiveEvent;
 import dev.l3g7.griefer_utils.core.events.network.ServerEvent.GrieferGamesJoinEvent;
+import dev.l3g7.griefer_utils.core.events.network.ServerEvent.ServerSwitchEvent;
 import dev.l3g7.griefer_utils.core.misc.ChatQueue;
 import dev.l3g7.griefer_utils.core.misc.ServerCheck;
 import dev.l3g7.griefer_utils.core.misc.gui.elements.laby_polyfills.DrawUtils;
@@ -122,6 +123,11 @@ public class CooldownNotifications extends Feature {
 			for (ItemStack itemStack : event.packet.getItemStacks())
 				parseAvailability(index++, itemStack);
 		}
+	}
+
+	@EventListener(triggerWhenDisabled = true)
+	public void cbSwitch(ServerSwitchEvent event) {
+		cooldownsGuiId = null;
 	}
 
 	private void parseAvailability(int slot, ItemStack s) {

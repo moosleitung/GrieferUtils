@@ -293,6 +293,10 @@ public class ConfigPatcher {
 			// Save filters
 			LabyMod.getInstance().getChatToolManager().saveTools();
 		}
+
+		if (cmp.compare("2.3-BETA-13", version) < 0) {
+			get("player.cooldown_notifications").remove("end_dates");
+		}
 	}
 
 	private void rename(String oldKey, String newKey) {
