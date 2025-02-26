@@ -293,7 +293,7 @@ public class ConfigPatcher {
 			LabyMod.getInstance().getChatToolManager().saveTools();
 		}
 
-		if (cmp.compare("2.3-BETA-13", version) < 0) {
+		if (cmp.compare("2.3-BETA-14", version) < 0) {
 			String[] validKeys = new String[]{"/premium", "/ultra", "/kopf", "/grieferboost", "/freekiste", "/startkick"};
 			for (Entry<String, JsonElement> entry : get("player.cooldown_notifications.end_dates").entrySet()) {
 				JsonObject data = entry.getValue().getAsJsonObject();
