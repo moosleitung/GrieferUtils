@@ -24,11 +24,8 @@ import net.labymod.main.LabyMod;
 
 import java.io.File;
 import java.nio.ByteBuffer;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
 
 import static dev.l3g7.griefer_utils.core.api.bridges.Bridge.Version.LABY_3;
 import static dev.l3g7.griefer_utils.core.api.bridges.LabyBridge.labyBridge;
@@ -297,7 +294,14 @@ public class ConfigPatcher {
 		}
 
 		if (cmp.compare("2.3-BETA-13", version) < 0) {
-			get("player.cooldown_notifications").remove("end_dates");
+			String[] validKeys = new String[]{"/premium", "/ultra", "/kopf", "/grieferboost", "/freekiste", "/startkick"};
+			for (Entry<String, JsonElement> entry : get("player.cooldown_notifications.end_dates").entrySet()) {
+				JsonObject data = entry.getValue().getAsJsonObject();
+				for (String key : new ArrayList<>(data.keySet()))
+					if (Arrays.binarySearch(validKeys, key) < 0)
+						data.remove(key);
+			}
+
 			JsonObject oldStats = get("modules.orb_stats.stats");
 			JsonObject newStats = new JsonObject();
 			for (Entry<String, JsonElement> entry : oldStats.entrySet()) {
