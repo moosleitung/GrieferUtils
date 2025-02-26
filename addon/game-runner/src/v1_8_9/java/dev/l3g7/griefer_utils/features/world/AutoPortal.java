@@ -89,6 +89,8 @@ public class AutoPortal extends Feature {
 				if (!joined)
 					send("/switch " + citybuild.get().getInternalName());
 
+				joined = true;
+
 			} catch (InterruptedException ignored) {}
 		}).start();
 	}
