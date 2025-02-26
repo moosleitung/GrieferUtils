@@ -12,8 +12,8 @@ import dev.l3g7.griefer_utils.core.api.event_bus.Priority;
 import dev.l3g7.griefer_utils.core.api.file_provider.Singleton;
 import dev.l3g7.griefer_utils.core.api.misc.Citybuild;
 import dev.l3g7.griefer_utils.core.api.reflection.Reflection;
-import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
 import dev.l3g7.griefer_utils.core.events.MessageEvent.MessageModifyEvent;
+import dev.l3g7.griefer_utils.core.settings.types.SwitchSetting;
 import dev.l3g7.griefer_utils.features.Feature;
 import net.minecraft.event.ClickEvent;
 import net.minecraft.event.HoverEvent;
@@ -46,6 +46,7 @@ public class InteractableMessages extends Feature {
 		.description("Macht Folgendes interagierbar:"
 			+ "\n- TPAs (§a/tpaccept§r und §c/tpdeny§r)"
 			+ "\n- Den Citybuild bei Globalchat-Nachrichten (Switcht zum CB)"
+			+ "\n- Den Clan-Namen bei Globalchat-Nachrichten (Führt /clan info aus)"
 			+ "\n- Den Status, Msgs, und Plotchat-Nachrichten (Schlägt /msg vor)"
 			+ "\n- \"/p h\" in Nachrichten (Teleportiert zum Plot)"
 			+ "\n- Spielernamen bei /clan info (Öffnet das Profil)"
@@ -63,22 +64,43 @@ public class InteractableMessages extends Feature {
 	}
 
 	private void modifyGlobalChats(MessageModifyEvent event) {
-		String unformattedText = event.original.getUnformattedText();
-		if (!unformattedText.startsWith("@["))
+		Matcher matcher = GLOBAL_CHAT_PATTERN.matcher(event.original.getFormattedText());
+		if (!matcher.matches())
 			return;
 
-		String cb = unformattedText.substring(2, unformattedText.indexOf(']'));
+		String cb = matcher.group("cb");
+		String clan = matcher.group("clantag");
+		if (clan != null)
+			clan = clan.replace('§', '&');
 
 		IChatComponent message = event.message;
 
-		for (IChatComponent sibling : message.getSiblings()) {
-			if (!sibling.getUnformattedTextForChat().equals(cb))
-				continue;
+		boolean foundCb = false;
+		boolean foundClan = false;
 
-			sibling.getChatStyle()
-				.setChatClickEvent(new ClickEvent(RUN_COMMAND, "/switch " + Citybuild.getCitybuild(cb).getInternalName()))
-				.setChatHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ChatComponentText("§6Klicke, um auf den CB zu wechseln")));
-			break;
+		for (IChatComponent sibling : message.getSiblings()) {
+			if (sibling.getUnformattedTextForChat().equals(cb)) {
+				sibling.getChatStyle()
+					.setChatClickEvent(new ClickEvent(RUN_COMMAND, "/switch " + Citybuild.getCitybuild(cb).getInternalName()))
+					.setChatHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ChatComponentText("§6Klicke, um auf den CB zu wechseln")));
+
+				foundCb = true;
+				if (clan == null)
+					break;
+			}
+
+			if (foundCb) {
+				if (!foundClan) {
+					if (sibling.getFormattedText().equals("§6[§r"))
+						foundClan = true;
+					continue;
+				}
+
+				if (sibling.getFormattedText().equals("§6] §r"))
+					break;
+
+				sibling.getChatStyle().setChatClickEvent(new ClickEvent(RUN_COMMAND, "/clan info " + clan));
+			}
 		}
 
 		event.setMessage(message);
