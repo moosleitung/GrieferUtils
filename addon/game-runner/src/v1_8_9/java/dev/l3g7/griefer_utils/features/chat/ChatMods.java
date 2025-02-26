@@ -42,7 +42,14 @@ public class ChatMods extends Feature {
 		"§r§8[§r§6GrieferGames§r§8] §r§fWir sind optimiert für MysteryMod. Lade Dir gerne die Mod runter!§r"
 	);
 
-	private static final List<String> COLORED_FONTS = ImmutableList.of("c6eabd", "bbaaeecc", "bae6d5");
+	private static final List<String> COLORED_FONTS = ImmutableList.of(
+		"c6eabd", // rainbow
+		"bbaaeecc", // easter
+		"bae6d5", // summer
+		"33bb", // double blue
+		"66ee787", // halloween
+		"bbffcc" // frost
+	);
 
 	private final SwitchSetting antiClearChat = SwitchSetting.create()
 		.name("Clearchat unterbinden")
