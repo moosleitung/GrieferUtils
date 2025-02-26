@@ -91,7 +91,7 @@ public class OrbStats extends SimpleWidget {
 		put("Polierte Andesitblöcke", "Polierter Andesit");
 	}};
 
-	private HashMap<Integer, Integer> stats = new HashMap<>();
+	private HashMap<Integer, Long> stats = new HashMap<>();
 	private String lastItem = null;
 	private GuiChest lastScreen = null;
 
@@ -245,7 +245,7 @@ public class OrbStats extends SimpleWidget {
 			if (!matcher.find())
 				continue;
 
-			int amount = Integer.parseInt(matcher.group("amount").replace(".", ""));
+			long amount = Long.parseLong(matcher.group("amount").replace(".", ""));
 			if (amount == 0)
 				continue;
 
@@ -288,23 +288,24 @@ public class OrbStats extends SimpleWidget {
 	}
 
 	private static class HashMapSerializer {
-		public static String toString(HashMap<Integer, Integer> map) {
+
+		public static String toString(HashMap<Integer, Long> map) {
 			ByteBuffer buf = ByteBuffer.allocate(map.size() * 8);
 
-			for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
+			for (Map.Entry<Integer, Long> entry : map.entrySet()) {
 				buf.putInt(entry.getKey());
-				buf.putInt(entry.getValue());
+				buf.putLong(entry.getValue());
 			}
 
 			return Base64.getEncoder().encodeToString(buf.array());
 		}
 
-		public static HashMap<Integer, Integer> fromString(String b64) {
-			HashMap<Integer, Integer> map = new HashMap<>();
+		public static HashMap<Integer, Long> fromString(String b64) {
+			HashMap<Integer, Long> map = new HashMap<>();
 			ByteBuffer buf = ByteBuffer.wrap(Base64.getDecoder().decode(b64));
 
 			while (buf.hasRemaining())
-				map.put(buf.getInt(), buf.getInt());
+				map.put(buf.getInt(), buf.getLong());
 
 			return map;
 		}

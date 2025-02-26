@@ -23,6 +23,8 @@ import net.labymod.ingamegui.ModuleConfigElement;
 import net.labymod.main.LabyMod;
 
 import java.io.File;
+import java.nio.ByteBuffer;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -296,6 +298,23 @@ public class ConfigPatcher {
 
 		if (cmp.compare("2.3-BETA-13", version) < 0) {
 			get("player.cooldown_notifications").remove("end_dates");
+			JsonObject oldStats = get("modules.orb_stats.stats");
+			JsonObject newStats = new JsonObject();
+			for (Entry<String, JsonElement> entry : oldStats.entrySet()) {
+				String b64 = entry.getValue().getAsString();
+
+				ByteBuffer buf = ByteBuffer.wrap(Base64.getDecoder().decode(b64));
+				ByteBuffer newBuf = ByteBuffer.allocate(buf.capacity() / 8 * 12);
+
+				while (buf.hasRemaining()) {
+					newBuf.putInt(buf.getInt());
+					newBuf.putLong(buf.getInt());
+				}
+
+				newStats.addProperty(entry.getKey(), Base64.getEncoder().encodeToString(buf.array()));
+			}
+
+			set("modules.orb_stats.stats", newStats);
 		}
 	}
 
