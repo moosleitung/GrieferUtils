@@ -305,6 +305,9 @@ public class ConfigPatcher {
 			JsonObject oldStats = get("modules.orb_stats.stats");
 			for (Entry<String, JsonElement> entry : oldStats.entrySet()) {
 				JsonObject o = entry.getValue().getAsJsonObject();
+				if (!o.has("data"))
+					continue;
+
 				String b64 = o.get("data").getAsString();
 
 				ByteBuffer buf = ByteBuffer.wrap(Base64.getDecoder().decode(b64));
