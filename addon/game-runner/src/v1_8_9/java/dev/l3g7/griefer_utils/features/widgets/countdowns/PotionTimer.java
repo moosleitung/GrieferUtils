@@ -228,7 +228,7 @@ public class PotionTimer extends Widget {
 				return;
 
 			List<PotionData> data = potions.values().stream()
-					.filter(d -> d.countdown != null && d.countdown.isExpired())
+					.filter(d -> d.countdown != null && !d.countdown.isExpired())
 					.collect(Collectors.toList());
 
 			if (data.isEmpty())
