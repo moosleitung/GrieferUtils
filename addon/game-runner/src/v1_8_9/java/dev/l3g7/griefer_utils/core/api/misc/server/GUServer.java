@@ -8,21 +8,19 @@
 package dev.l3g7.griefer_utils.core.api.misc.server;
 
 import com.mojang.util.UUIDTypeAdapter;
-import dev.l3g7.griefer_utils.core.api.misc.server.requests.StaticApiRequest;
-import dev.l3g7.griefer_utils.core.api.misc.server.requests.StaticApiRequest.StaticApiData;
 import dev.l3g7.griefer_utils.core.api.event_bus.EventListener;
 import dev.l3g7.griefer_utils.core.api.misc.Citybuild;
 import dev.l3g7.griefer_utils.core.api.misc.PlayerKeyPair;
 import dev.l3g7.griefer_utils.core.api.misc.server.requests.LeaderboardRequest;
 import dev.l3g7.griefer_utils.core.api.misc.server.requests.LeaderboardRequest.LeaderboardData;
+import dev.l3g7.griefer_utils.core.api.misc.server.requests.StaticApiRequest;
+import dev.l3g7.griefer_utils.core.api.misc.server.requests.StaticApiRequest.StaticApiData;
 import dev.l3g7.griefer_utils.core.api.misc.server.requests.hive_mind.*;
 import dev.l3g7.griefer_utils.core.api.util.IOUtil;
 import dev.l3g7.griefer_utils.core.events.AccountSwitchEvent;
 import dev.l3g7.griefer_utils.core.events.StaticDataReceiveEvent;
 import dev.l3g7.griefer_utils.core.events.annotation_events.OnStartupComplete;
 import dev.l3g7.griefer_utils.core.events.network.ServerEvent.ServerJoinEvent;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
 
 import java.security.GeneralSecurityException;
 import java.util.Collections;
@@ -147,11 +145,16 @@ public class GUServer {
 		return CompletableFuture.supplyAsync(() -> new LeaderboardRequest(flown).send());
 	}
 
-	public static CompletableFuture<Void> sendBlockOfTheDay(ItemStack item) {
+	public static CompletableFuture<Void> sendBlockOfTheDayBlock(String id, int damage, String event) {
 		return CompletableFuture.supplyAsync(() -> {
-			var nbt = new NBTTagCompound();
-			item.writeToNBT(nbt);
-			new BlockOfTheDayRequest(nbt.toString(), System.currentTimeMillis() / 1000).send();
+			new BlockOfTheDayRequest.Block(id, damage, event).send();
+			return null;
+		});
+	}
+
+	public static CompletableFuture<Void> sendBlockOfTheDayReward(String type, int amount) {
+		return CompletableFuture.supplyAsync(() -> {
+			new BlockOfTheDayRequest.Reward(type, amount).send();
 			return null;
 		});
 	}
