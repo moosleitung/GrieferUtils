@@ -47,7 +47,7 @@ public class ChatFilterTemplates extends Feature { // NOTE: patch to FilterTempl
 	static final FilterTemplate[] TEMPLATES = new FilterTemplate[]{
 		new FilterTemplate("Eingehende MSG", of("-> mir]"), of("»")),
 		new FilterTemplate("Ausgehende MSG", of("[mir ->"), of("»")),
-		new FilterTemplate("Globalchat", of("@["), of()),
+		new FilterTemplate("Globalchat", of("@[","[ⓐ]"), of()),
 		new FilterTemplate("Plotchat", of("[Plot-Chat]"), of("»")),
 		new FilterTemplate("Eingehende Zahlung", of(" gegeben."), of("»", "->", "Du hast")),
 		new FilterTemplate("Ausgehende Zahlung", of(" gegeben."), of("»", "->", "[GrieferGames]", "hat dir")),
