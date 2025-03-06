@@ -50,7 +50,8 @@ public enum Citybuild implements Named {
 
 	WATER(new ItemStack(water_bucket), "farm1", "Wasser", "w"),
 	LAVA(new ItemStack(lava_bucket), "nether1", "Lava", "l"),
-	EVENT(new ItemStack(beacon), "eventserver", "Event", "v");
+	EVENT(new ItemStack(beacon), "eventserver", "Event", "v"),
+	ZAUBER(new ItemStack(mycelium), "zauberwald","Zauberwald","z", "zw");
 
 	private final String internalName;
 	private final String displayName;
