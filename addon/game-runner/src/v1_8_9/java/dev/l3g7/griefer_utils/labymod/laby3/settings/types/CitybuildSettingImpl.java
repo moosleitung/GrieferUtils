@@ -75,6 +75,7 @@ public class CitybuildSettingImpl extends DropDownElement<CitybuildSettingImpl.D
 		CB_ITEMS.add(new Pair<>(createItem(Items.water_bucket, 0, "Wasser"), Citybuild.WATER));
 		CB_ITEMS.add(new Pair<>(createItem(Items.lava_bucket, 0, "Lava"), Citybuild.LAVA));
 		CB_ITEMS.add(new Pair<>(createItem(beacon, 0, "Event"), Citybuild.EVENT));
+		CB_ITEMS.add(new Pair<>(createItem(mycelium,0,"Zauberwald"),Citybuild.ZAUBER));
 	}
 
 	public static ItemStack MISSING_TEXTURE = new ItemStack(Blocks.stone, 1, 10000);
