@@ -85,6 +85,7 @@ public class BetterSwitchCommand extends Feature {
 		display(Constants.ADDON_PREFIX + "§7Wasser: 'w'");
 		display(Constants.ADDON_PREFIX + "§7Lava: 'l'");
 		display(Constants.ADDON_PREFIX + "§7Event: 'v'");
+		display(Constants.ADDON_PREFIX + "§7Zauberwald: 'z'");
 
 		event.cancel();
 	}
