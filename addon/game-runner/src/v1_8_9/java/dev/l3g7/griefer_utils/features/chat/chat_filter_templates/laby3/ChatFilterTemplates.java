@@ -26,7 +26,7 @@ public class ChatFilterTemplates extends Feature {
 	static final FilterTemplate[] TEMPLATES = new FilterTemplate[]{
 		new FilterTemplate("Eingehende MSG").contains("-> mir]").containsNot("»"),
 		new FilterTemplate("Ausgehende MSG").contains("[mir ->").containsNot("»"),
-		new FilterTemplate("Globalchat").contains("@["),
+		new FilterTemplate("Globalchat").contains("@[", "[ⓐ]"),
 		new FilterTemplate("Plotchat").contains("[Plot-Chat]").containsNot("»"),
 		new FilterTemplate("Eingehende Zahlung").contains(" gegeben.").containsNot("»", "->", "Du hast"),
 		new FilterTemplate("Ausgehende Zahlung").contains(" gegeben.").containsNot("»", "->", "[GrieferGames]", "hat dir"),
